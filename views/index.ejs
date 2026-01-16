@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: #333;
+      }
+      .container {
+        background: white;
+        border-radius: 12px;
+        padding: 40px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      }
+      h1 {
+        color: #667eea;
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        text-align: center;
+      }
+      .subtitle {
+        text-align: center;
+        color: #666;
+        font-size: 1.2em;
+        margin-bottom: 40px;
+      }
+      .status {
+        background: #10b981;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        display: inline-block;
+        margin: 20px 0;
+        font-weight: bold;
+      }
+      .endpoints {
+        margin-top: 40px;
+      }
+      .endpoint {
+        background: #f8f9fa;
+        padding: 20px;
+        margin: 15px 0;
+        border-radius: 8px;
+        border-left: 4px solid #667eea;
+      }
+      .endpoint-method {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-weight: bold;
+        font-size: 0.9em;
+        margin-right: 10px;
+      }
+      .method-post {
+        background: #10b981;
+        color: white;
+      }
+      .method-get {
+        background: #3b82f6;
+        color: white;
+      }
+      .endpoint-url {
+        font-family: 'Courier New', monospace;
+        color: #667eea;
+        font-weight: bold;
+      }
+      .endpoint-desc {
+        color: #666;
+        margin-top: 8px;
+      }
+      .test-link {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 12px 24px;
+        background: #667eea;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+        transition: background 0.3s;
+      }
+      .test-link:hover {
+        background: #5568d3;
+      }
+      .info-box {
+        background: #e0e7ff;
+        border-left: 4px solid #667eea;
+        padding: 15px;
+        margin: 20px 0;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>✈️ <%= title %></h1>
+      <p class="subtitle"><%= message %></p>
+      
+      <div style="text-align: center;">
+        <span class="status">🟢 Server Running</span>
+      </div>
+
+      <div class="info-box">
+        <strong>📍 Server URL:</strong> <code>http://localhost:3000</code><br>
+        <strong>📚 API Base:</strong> <code>http://localhost:3000/api/auth</code>
+      </div>
+
+      <div class="endpoints">
+        <h2>Available API Endpoints</h2>
+        
+        <div class="endpoint">
+          <span class="endpoint-method method-post">POST</span>
+          <span class="endpoint-url">/api/auth/register</span>
+          <div class="endpoint-desc">Register a new user (Traveler, Travel Agency, or Hotel Representative)</div>
+        </div>
+
+        <div class="endpoint">
+          <span class="endpoint-method method-post">POST</span>
+          <span class="endpoint-url">/api/auth/login</span>
+          <div class="endpoint-desc">Login with email and password</div>
+        </div>
+
+        <div class="endpoint">
+          <span class="endpoint-method method-get">GET</span>
+          <span class="endpoint-url">/api/auth/me</span>
+          <div class="endpoint-desc">Get current user profile (requires authentication token)</div>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 40px;">
+        <a href="/login.html" class="test-link" style="margin-right: 10px;">🔐 Login</a>
+        <a href="/register.html" class="test-link" style="margin-right: 10px;">📝 Register</a>
+        <a href="/API_DOCUMENTATION.md" class="test-link">📚 API Docs</a>
+      </div>
+
+      <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #666; font-size: 0.9em; text-align: center;">
+        <p>💡 Tip: Use Postman, cURL, or the browser console to test the API endpoints</p>
+        <p>📖 See <code>API_DOCUMENTATION.md</code> for detailed API reference</p>
+      </div>
+    </div>
+  </body>
+</html>
