@@ -105,8 +105,8 @@ const login = async (req, res) => {
  */
 const getCurrentUser = async (req, res) => {
   try {
-    const user = User.findById(req.user.id);
-    
+    const user = await User.findById(req.user.id);
+
     if (!user) {
       return res.status(404).json({
         success: false,
