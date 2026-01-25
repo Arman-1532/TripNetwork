@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - TripNetwork</title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .user-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .info-item {
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-approved {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .token-section {
+            margin-top: 20px;
+        }
+
+        .token-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            margin-top: 10px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>✈️ TripNetwork Dashboard</h1>
+                <p>Welcome back!</p>
+            </div>
+            <div>
+                <a href="/" class="btn">Home</a>
+                <button onclick="logout()" class="btn btn-danger">Logout</button>
+            </div>
+        </div>
+
+        <div id="loading" class="card loading">
+            Loading user profile...
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="dashboard" style="display: none;">
+            <div class="card">
+                <h2>User Profile</h2>
+                <div class="user-info" id="userInfo">
+                    <!-- User info will be populated here -->
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Authentication Token</h2>
+                <p>Your JWT token (use this for API requests):</p>
+                <div class="token-display" id="tokenDisplay"></div>
+                <button onclick="copyToken()" class="btn" style="margin-top: 10px;">Copy Token</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        // Redirect if not logged in
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+
+        // Display stored user info immediately
+        if (user && user.id) {
+            displayUserInfo(user);
+            document.getElementById('tokenDisplay').textContent = token;
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+        }
+
+        // Fetch fresh user data from API
+        async function fetchUserProfile() {
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    displayUserInfo(data.data.user);
+                    localStorage.setItem('user', JSON.stringify(data.data.user));
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('dashboard').style.display = 'block';
+                } else {
+                    showError(data.message || 'Failed to fetch profile');
+                    // If token is invalid, redirect to login
+                    if (response.status === 401) {
+                        setTimeout(() => {
+                            logout();
+                        }, 2000);
+                    }
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            }
+        }
+
+        function displayUserInfo(user) {
+            const userInfo = document.getElementById('userInfo');
+            
+            const statusClass = user.approvalStatus === 'approved' ? 'status-approved' : 'status-pending';
+            const statusText = user.approvalStatus === 'approved' ? '✓ Approved' : '⏳ Pending';
+
+            let html = `
+                <div class="info-item">
+                    <div class="info-label">User ID</div>
+                    <div class="info-value">#${user.id}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Email</div>
+                    <div class="info-value">${user.email}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Role</div>
+                    <div class="info-value">${formatRole(user.role)}</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">Status</div>
+                    <div class="info-value"><span class="status-badge ${statusClass}">${statusText}</span></div>
+                </div>
+            `;
+
+            // Add role-specific fields
+            if (user.role === 'traveler' && user.name) {
+                html += `
+                    <div class="info-item">
+                        <div class="info-label">Name</div>
+                        <div class="info-value">${user.name}</div>
+                    </div>
+                `;
+            }
+            if (user.phone) {
+                html += `
+                    <div class="info-item">
+                        <div class="info-label">Phone</div>
+                        <div class="info-value">${user.phone}</div>
+                    </div>
+                `;
+            }
+            if (user.agencyName) {
+                html += `
+                    <div class="info-item">
+                        <div class="info-label">Agency Name</div>
+                        <div class="info-value">${user.agencyName}</div>
+                    </div>
+                `;
+            }
+            if (user.hotelName) {
+                html += `
+                    <div class="info-item">
+                        <div class="info-label">Hotel Name</div>
+                        <div class="info-value">${user.hotelName}</div>
+                    </div>
+                `;
+            }
+
+            userInfo.innerHTML = html;
+        }
+
+        function formatRole(role) {
+            const roles = {
+                'traveler': '👤 Traveler',
+                'travel_agency': '🏢 Travel Agency',
+                'hotel_representative': '🏨 Hotel Representative',
+                'admin': '👑 Admin'
+            };
+            return roles[role] || role;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        function copyToken() {
+            const token = document.getElementById('tokenDisplay').textContent;
+            navigator.clipboard.writeText(token).then(() => {
+                alert('Token copied to clipboard!');
+            });
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        }
+
+        // Fetch fresh data on page load
+        fetchUserProfile();
+    </script>
+</body>
+</html>
