@@ -9,7 +9,7 @@ const { User } = require('../models/User');
 /**
  * Verify JWT token and attach user to request
  */
-const authenticate = (req, res, next) => {
+const authenticate = async (req, res, next) => {
   try {
     // Get token from header
     const authHeader = req.headers.authorization;
@@ -35,7 +35,7 @@ const authenticate = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Find user
-    const user = User.findById(decoded.id);
+    const user = await User.findById(decoded.id);
 
     if (!user) {
       return res.status(401).json({
@@ -45,10 +45,19 @@ const authenticate = (req, res, next) => {
     }
 
     // Check if user is still approved
-    if (user.approvalStatus !== 'approved') {
+    // DB uses 'ACTIVE', 'PENDING', 'BLOCKED'
+    if (user.approvalStatus !== 'ACTIVE') {
+      // If pending, specific message
+      if (user.approvalStatus === 'PENDING') {
+        return res.status(403).json({
+          success: false,
+          message: 'Account is pending approval. Please wait for admin approval.'
+        });
+      }
+
       return res.status(403).json({
         success: false,
-        message: 'Account is pending approval. Please wait for admin approval.'
+        message: 'Account is not active.'
       });
     }
 
@@ -68,7 +77,7 @@ const authenticate = (req, res, next) => {
         message: 'Invalid token'
       });
     }
-    
+
     if (error.name === 'TokenExpiredError') {
       return res.status(401).json({
         success: false,
