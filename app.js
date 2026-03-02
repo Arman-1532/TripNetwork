@@ -17,6 +17,12 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var authRouter = require('./routes/auth');
 var adminRouter = require('./routes/admin');
+var flightsRouter = require('./routes/flights');
+var paymentRouter = require('./routes/payment');
+var packagesRouter = require('./routes/packages');
+var hotelsRouter = require('./routes/hotels');
+var bookingsRouter = require('./routes/bookings');
+var customRequestsRouter = require('./routes/customRequests');
 
 
 var app = express();
@@ -33,9 +39,15 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Routes
 app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/api/users', usersRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/flights', flightsRouter);
+app.use('/api/payment', paymentRouter);
+app.use('/api/packages', packagesRouter);
+app.use('/api/hotels', hotelsRouter);
+app.use('/api/bookings', bookingsRouter);
+app.use('/api/custom-requests', customRequestsRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
