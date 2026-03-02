@@ -117,13 +117,29 @@ class User {
   }
 
   static async findByEmail(email) {
-    const [rows] = await pool.execute('SELECT * FROM user WHERE email = ?', [email]);
+    const [rows] = await pool.execute(`
+      SELECT u.*, p.provider_type, p.trade_license_id, p.address, p.website,
+             a.agency_name, h.hotel_name, h.location as hotel_location
+      FROM user u
+      LEFT JOIN provider p ON u.user_id = p.provider_id
+      LEFT JOIN agency a ON u.user_id = a.agency_id
+      LEFT JOIN hotel h ON u.user_id = h.hotel_id
+      WHERE u.email = ?
+    `, [email]);
     if (rows.length === 0) return null;
     return User.mapDbUserToModel(rows[0]);
   }
 
   static async findById(id) {
-    const [rows] = await pool.execute('SELECT * FROM user WHERE user_id = ?', [id]);
+    const [rows] = await pool.execute(`
+      SELECT u.*, p.provider_type, p.trade_license_id, p.address, p.website,
+             a.agency_name, h.hotel_name, h.location as hotel_location
+      FROM user u
+      LEFT JOIN provider p ON u.user_id = p.provider_id
+      LEFT JOIN agency a ON u.user_id = a.agency_id
+      LEFT JOIN hotel h ON u.user_id = h.hotel_id
+      WHERE u.user_id = ?
+    `, [id]);
     if (rows.length === 0) return null;
     return User.mapDbUserToModel(rows[0]);
   }
@@ -152,12 +168,18 @@ class User {
     return {
       id: dbUser.user_id,
       email: dbUser.email,
-      password: dbUser.password_hash, // Keep needed for auth check
-      role: dbUser.role.toLowerCase(), // Map back to lowercase if needed
+      password: dbUser.password_hash,
+      role: dbUser.role.toLowerCase(),
       approvalStatus: dbUser.status,
       name: dbUser.name,
-      phone: dbUser.phone
-      // Note: Full mapping would join mostly needed
+      phone: dbUser.phone,
+      providerType: dbUser.provider_type,
+      tradeLicenseId: dbUser.trade_license_id,
+      address: dbUser.address,
+      website: dbUser.website,
+      agencyName: dbUser.agency_name,
+      hotelName: dbUser.hotel_name,
+      hotelLocation: dbUser.hotel_location
     };
   }
 }
