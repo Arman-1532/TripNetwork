@@ -66,6 +66,8 @@ const authenticate = async (req, res, next) => {
       id: user.id,
       email: user.email,
       role: user.role,
+      providerType: user.providerType, // Added
+      name: user.name, // Added
       approvalStatus: user.approvalStatus
     };
 
@@ -106,7 +108,11 @@ const authorize = (...allowedRoles) => {
       });
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    const userRole = req.user.role ? req.user.role.toLowerCase() : '';
+    const isAllowed = allowedRoles.some(role => role.toLowerCase() === userRole);
+
+    if (!isAllowed) {
+      console.warn(`🚫 Access Denied: User role '${userRole}' not in allowed roles: [${allowedRoles}]`);
       return res.status(403).json({
         success: false,
         message: 'Access denied. Insufficient permissions.'
