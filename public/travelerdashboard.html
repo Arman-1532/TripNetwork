@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traveler Dashboard - TripNetwork</title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+    <link rel="stylesheet" href="/stylesheets/dashboard.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>✈️ Traveler Dashboard</h1>
+                <p>Welcome back, <span id="userNameDisplay">Traveler</span>!</p>
+            </div>
+            <div>
+                <a href="/" class="btn">Home</a>
+                <button onclick="logout()" class="btn btn-danger">Logout</button>
+            </div>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div class="card">
+            <h2>✨ Design Your Custom Trip</h2>
+            <p style="margin-bottom: 20px; color: #666;">Can't find what you're looking for? Submit a request and let
+                agencies bid for your business!</p>
+            <form id="customRequestForm" onsubmit="submitCustomRequest(event)">
+                <div class="search-grid">
+                    <div class="form-group">
+                        <label>Where to?</label>
+                        <input type="text" id="customDestination" class="form-control"
+                            placeholder="e.g. Bali, Indonesia" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Preferred Date</label>
+                        <input type="date" id="customDate" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Budget (BDT)</label>
+                        <input type="number" id="customBudget" class="form-control" placeholder="e.g. 50000" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Travelers</label>
+                        <input type="number" id="customPeople" class="form-control" value="1" min="1" required>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label>Tell us more about your dream trip</label>
+                    <textarea id="customDesc" class="form-control"
+                        placeholder="e.g. 5-star hotel, guided tours, vegetarian meals..." style="height: 100px;"
+                        required></textarea>
+                </div>
+                <button type="submit" id="submitCustomBtn" class="btn"
+                    style="width: 100%; font-weight: 700; background: #764ba2;">Submit Custom Request</button>
+            </form>
+        </div>
+
+        <div class="card" id="customRequestsSection" style="display: none;">
+            <h2>📬 My Custom Requests & Bids</h2>
+            <div id="customRequestsList" class="package-grid"></div>
+            <div id="customRequestsLoading" class="loading" style="display: none;">Checking for bids...</div>
+        </div>
+
+        <div class="card">
+            <h2>🔍 Search Flights</h2>
+            <div class="search-grid">
+                <div class="form-group">
+                    <label>Origin (e.g., DAC)</label>
+                    <input type="text" id="origin" class="form-control" placeholder="DAC" value="DAC">
+                </div>
+                <div class="form-group">
+                    <label>Destination (e.g., CXB)</label>
+                    <input type="text" id="destination" class="form-control" placeholder="CXB" value="CXB">
+                </div>
+                <div class="form-group">
+                    <label>Departure Date</label>
+                    <input type="date" id="departureDate" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Adults</label>
+                    <input type="number" id="adults" class="form-control" value="1" min="1">
+                </div>
+            </div>
+            <button onclick="searchFlights()" class="btn" style="width: 100%; font-weight: 700;">Search Offers</button>
+
+            <div id="flightResults" class="flight-results" style="display: none;">
+                <h3>Available Flight Offers</h3>
+                <div id="resultsList"></div>
+            </div>
+            <div id="searchLoading" class="loading" style="display: none;">Searching for deals...</div>
+        </div>
+
+        <div class="card">
+            <h2>🌟 Exclusive Travel Packages</h2>
+            <div id="availableAgencyPackages" class="package-grid"></div>
+            <div id="agencyPackagesLoading" class="loading">Fetching packages...</div>
+        </div>
+
+        <div class="card">
+            <h2>🏨 Find Your Perfect Stay</h2>
+            <div class="search-grid" style="margin-bottom: 20px;">
+                <div class="form-group">
+                    <label>Destination City</label>
+                    <input type="text" id="hotelSearchCity" class="form-control" placeholder="e.g. Cox's Bazar">
+                </div>
+                <div class="form-group">
+                    <label>Room Type</label>
+                    <select id="hotelSearchRoomType" class="form-control">
+                        <option value="Any">Any Type</option>
+                        <option value="Single">Single</option>
+                        <option value="Double">Double</option>
+                        <option value="Suite">Suite</option>
+                        <option value="Deluxe">Deluxe</option>
+                        <option value="Penthouse">Penthouse</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Max Price (BDT)</label>
+                    <input type="number" id="hotelSearchMaxPrice" class="form-control" placeholder="e.g. 10000">
+                </div>
+                <div class="form-group" style="display: flex; align-items: flex-end;">
+                    <button onclick="searchHotels()" class="btn"
+                        style="width: 100%; height: 40px; font-weight: 700;">Find Hotels</button>
+                </div>
+            </div>
+            <div id="availableHotelPackages" class="package-grid">
+                <p style="grid-column: 1/-1; text-align: center; color: #666; padding: 20px;">Enter a city to search.
+                </p>
+            </div>
+            <div id="hotelPackagesLoading" class="loading" style="display: none;">Finding hotels...</div>
+        </div>
+
+        <div class="card">
+            <h2>📑 My Bookings & Invoices</h2>
+            <div id="bookingList" class="package-grid"></div>
+            <div id="bookingLoading" class="loading">Fetching history...</div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeBookingForm()">&times;</span>
+            <div class="modal-header">
+                <h2>Complete Your Booking</h2>
+            </div>
+            <div id="bookingSummary" class="booking-summary"></div>
+            <form id="bookingForm" onsubmit="submitBooking(event)">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="bookingNumPeople">Number of Travelers</label>
+                    <input type="number" id="bookingNumPeople" class="form-control" value="1" min="1" required>
+                </div>
+                <button type="submit" id="confirmBookingBtn" class="btn" style="width: 100%; font-weight: 700;">Confirm
+                    Booking</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="packageDetailsModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close-modal" onclick="closeDetailsModal()">&times;</span>
+            <div id="detailsContent"></div>
+            <div id="detailsActionBtnContainer"
+                style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;"></div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        if (!token || (user.role || '').toUpperCase() !== 'TRAVELER') {
+            window.location.href = '/login.html';
+        }
+
+        document.getElementById('userNameDisplay').textContent = user.name || 'Traveler';
+        const depDateInput = document.getElementById('departureDate');
+        if (depDateInput) {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            depDateInput.value = tomorrow.toISOString().split('T')[0];
+        }
+
+        let myCustomRequests = [];
+        fetchAvailableAgencyPackages();
+        fetchUserBookings();
+        fetchMyCustomRequests();
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login.html';
+        }
+
+        async function searchFlights() {
+            const origin = document.getElementById('origin').value;
+            const destination = document.getElementById('destination').value;
+            const date = document.getElementById('departureDate').value;
+            const adults = document.getElementById('adults').value;
+            if (!origin || !destination || !date) return alert('Please fill in origin, destination and date');
+            const resultsDiv = document.getElementById('flightResults');
+            const resultsList = document.getElementById('resultsList');
+            const loading = document.getElementById('searchLoading');
+            resultsDiv.style.display = 'none';
+            loading.style.display = 'block';
+            resultsList.innerHTML = '';
+            try {
+                const response = await fetch(`/api/flights/search?origin=${origin}&destination=${destination}&date=${date}&adults=${adults}`);
+                const data = await response.json();
+                loading.style.display = 'none';
+                if (data && data.length > 0) {
+                    resultsDiv.style.display = 'block';
+                    data.forEach(offer => resultsList.appendChild(createFlightCard(offer)));
+                } else alert('No flights found.');
+            } catch (error) { loading.style.display = 'none'; alert('Search error.'); }
+        }
+
+        function createFlightCard(offer) {
+            const card = document.createElement('div');
+            card.className = 'flight-card';
+            const itinerary = offer.itineraries[0];
+            const segment = itinerary.segments[0];
+            const arrivalSegment = itinerary.segments[itinerary.segments.length - 1];
+            const depTime = new Date(segment.departure.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const arrTime = new Date(arrivalSegment.arrival.at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            card.innerHTML = `
+                <div class="flight-info">
+                    <div class="carrier-info">
+                        <span class="carrier-code">${segment.carrierCode}</span>
+                        <span class="flight-number">Flight ${segment.number}</span>
+                    </div>
+                    <div class="route-info">
+                        <div class="time-box"><div class="time">${depTime}</div><div class="city">${segment.departure.iataCode}</div></div>
+                        <div class="duration-line"><span class="duration-text">${itinerary.duration.replace('PT', '').toLowerCase()}</span></div>
+                        <div class="time-box"><div class="time">${arrTime}</div><div class="city">${arrivalSegment.arrival.iataCode}</div></div>
+                    </div>
+                </div>
+                <div class="price-info">
+                    <div class="price">${offer.price.total}</div>
+                    <div class="currency">${offer.price.currency}</div>
+                    <button class="btn" style="margin-top: 10px; padding: 5px 15px; font-size: 12px;" onclick='openBookingForm(${JSON.stringify(offer).replace(/'/g, "&apos;")})'>Book Now</button>
+                </div>`;
+            return card;
+        }
+
+        let currentOffer = null;
+        function openBookingForm(offer) {
+            currentOffer = offer;
+            const modal = document.getElementById('bookingModal');
+            const summary = document.getElementById('bookingSummary');
+            const itinerary = offer.itineraries[0];
+            summary.innerHTML = `
+                <div class="summary-item"><span class="summary-label">Route:</span><span class="summary-value">${itinerary.segments[0].departure.iataCode} → ${itinerary.segments[itinerary.segments.length - 1].arrival.iataCode}</span></div>
+                <div class="summary-item"><span class="summary-label">Airline:</span><span class="summary-value">${itinerary.segments[0].carrierCode} ${itinerary.segments[0].number}</span></div>
+                <div class="summary-item"><span class="summary-label">Price:</span><span class="summary-value">${offer.price.total} ${offer.price.currency}</span></div>`;
+            modal.style.display = 'block';
+        }
+
+        function closeBookingForm() { document.getElementById('bookingModal').style.display = 'none'; currentOffer = null; }
+
+        async function submitBooking(event) {
+            event.preventDefault();
+            const btn = document.getElementById('confirmBookingBtn');
+            const numPeople = document.getElementById('bookingNumPeople').value;
+            btn.disabled = true; btn.textContent = 'Processing...';
+            try {
+                const bookingRes = await fetch('/api/bookings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ booking_type: 'FLIGHT', flight_details: currentOffer, num_people: parseInt(numPeople), total_price: parseFloat(currentOffer.price.total) })
+                });
+                const bookingData = await bookingRes.json();
+                if (!bookingData.success) throw new Error(bookingData.message);
+                const paymentRes = await fetch('/api/payment/init', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ bookingId: bookingData.data.bookingId })
+                });
+                const paymentData = await paymentRes.json();
+                if (paymentData.url) window.location.href = paymentData.url;
+                else throw new Error(paymentData.message);
+            } catch (error) { alert('Error: ' + error.message); }
+            finally { btn.disabled = false; btn.textContent = 'Confirm Booking'; }
+        }
+
+        async function buyPackage(pkg) {
+            if (!confirm(`Book "${pkg.title}"?`)) return;
+            try {
+                const bookingRes = await fetch('/api/bookings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ booking_type: 'PACKAGE', package_id: pkg.package_id, num_people: 1, total_price: parseFloat(pkg.price) })
+                });
+                const bookingData = await bookingRes.json();
+                if (!bookingData.success) throw new Error(bookingData.message);
+                const paymentRes = await fetch('/api/payment/init', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ bookingId: bookingData.data.bookingId })
+                });
+                const paymentData = await paymentRes.json();
+                if (paymentData.url) window.location.href = paymentData.url;
+                else throw new Error(paymentData.message);
+            } catch (error) { alert('Error: ' + error.message); }
+        }
+
+        async function fetchAvailableAgencyPackages() {
+            const container = document.getElementById('availableAgencyPackages');
+            const loading = document.getElementById('agencyPackagesLoading');
+            try {
+                const response = await fetch('/api/packages');
+                const data = await response.json();
+                loading.style.display = 'none';
+                container.innerHTML = '';
+                const agencyPkgs = (data.data || []).filter(pkg => pkg.package_type === 'TRAVEL');
+                if (agencyPkgs.length > 0) agencyPkgs.forEach(pkg => container.appendChild(createPackageCard(pkg, true)));
+                else container.innerHTML = '<p>No travel packages available.</p>';
+            } catch (error) { loading.textContent = 'Error.'; }
+        }
+
+        async function searchHotels() {
+            const city = document.getElementById('hotelSearchCity').value.trim().toLowerCase();
+            const roomType = document.getElementById('hotelSearchRoomType').value;
+            const maxPrice = document.getElementById('hotelSearchMaxPrice').value;
+            const container = document.getElementById('availableHotelPackages');
+            const loading = document.getElementById('hotelPackagesLoading');
+            if (!city && roomType === 'Any' && !maxPrice) return alert('Enter a city, room type, or price.');
+            container.innerHTML = ''; loading.style.display = 'block';
+            try {
+                const response = await fetch('/api/packages');
+                const data = await response.json();
+                loading.style.display = 'none';
+                let hotels = data.data.filter(pkg => pkg.package_type === 'HOTEL');
+                if (city) hotels = hotels.filter(h => h.destination.toLowerCase().includes(city));
+                if (maxPrice) hotels = hotels.filter(h => h.price <= parseFloat(maxPrice));
+                if (roomType !== 'Any') {
+                    hotels = hotels.filter(h => {
+                        try { if (h.description.startsWith('{')) return JSON.parse(h.description).roomType === roomType; } catch (e) { } return false;
+                    });
+                }
+                if (hotels.length > 0) hotels.forEach(pkg => container.appendChild(createPackageCard(pkg, true)));
+                else container.innerHTML = '<p>No hotels found.</p>';
+            } catch (error) { loading.style.display = 'none'; alert('Error.'); }
+        }
+
+        async function fetchUserBookings() {
+            const container = document.getElementById('bookingList');
+            const loading = document.getElementById('bookingLoading');
+            try {
+                const response = await fetch('/api/bookings', { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await response.json();
+                loading.style.display = 'none'; container.innerHTML = '';
+                if (data.success && data.data.length > 0) data.data.forEach(booking => container.appendChild(createBookingCard(booking)));
+                else container.innerHTML = '<p>No bookings found.</p>';
+            } catch (error) { loading.textContent = 'Error.'; }
+        }
+
+        function createBookingCard(booking) {
+            const div = document.createElement('div');
+            div.className = 'package-card';
+            const date = new Date(booking.created_at).toLocaleDateString();
+            const details = booking.booking_type === 'FLIGHT' ? `${booking.airline_name} ${booking.flight_number}: ${booking.departure_airport} → ${booking.arrival_airport}` : `Package #${booking.package_id}`;
+            div.innerHTML = `
+                <div class="package-header"><span class="badge ${booking.booking_type === 'FLIGHT' ? 'badge-travel' : 'badge-hotel'}">${booking.booking_type}</span><span class="package-route">${date}</span></div>
+                <div class="package-body"><div class="package-title">${details}</div><div class="package-desc">Transaction: ${booking.transaction_id || 'N/A'}<br>Method: ${booking.payment_method || 'N/A'}</div></div>`;
+            return div;
+        }
+
+        function createPackageCard(pkg, showBookBtn) {
+            const div = document.createElement('div');
+            div.className = 'package-card'; div.style.cursor = 'pointer';
+            div.onclick = (e) => { if (e.target.tagName !== 'BUTTON') showPackageDetails(pkg); };
+            const providerName = pkg.hotel_name || pkg.agency_name || 'TripNetwork Partner';
+            let detailsHtml = `<div class="package-desc">${pkg.description || ''}</div>`;
+            try {
+                if (pkg.description && pkg.description.startsWith('{')) {
+                    const info = JSON.parse(pkg.description);
+                    detailsHtml = `<div class="package-details-mini" style="font-size: 13px; color: #555; margin-bottom: 10px;">
+                        <div style="display: flex; gap: 15px; margin-bottom: 5px;">
+                            <span>🏠 <b>${info.roomType || 'Room'}</b></span>
+                            ${info.maxAdults ? `<span>👥 <b>${info.maxAdults} Adults</b></span>` : ''}
+                        </div>
+                        <div style="color: #666; font-style: italic; margin-bottom: 8px;">${(info.fullDescription || info.description || '').substring(0, 80)}${(info.fullDescription || info.description || '').length > 80 ? '...' : ''}</div>
+                    </div>`;
+                }
+            } catch (e) { }
+            div.innerHTML = `
+                <div class="package-header"><span class="badge badge-${pkg.package_type.toLowerCase()}">${pkg.package_type}</span><span class="package-route">${pkg.origin ? pkg.origin + ' → ' : ''}${pkg.destination}</span></div>
+                <div class="package-body"><div class="package-title">${pkg.title}</div><div style="font-size: 13px; color: #667eea; font-weight: 600; margin-bottom: 8px;">${pkg.package_type === 'HOTEL' ? '🏨 ' : '🏢 '}${providerName}</div>${detailsHtml}
+                    <div class="package-meta"><div class="package-price">৳${pkg.price}</div>${showBookBtn ? `<button class="btn" onclick='buyPackage(${JSON.stringify(pkg).replace(/'/g, "&apos;")})'>Book Now</button>` : ''}</div>
+                </div>`;
+            return div;
+        }
+
+        function showPackageDetails(pkg) {
+            const content = document.getElementById('detailsContent');
+            const actionContainer = document.getElementById('detailsActionBtnContainer');
+            const modal = document.getElementById('packageDetailsModal');
+            const providerName = pkg.hotel_name || pkg.agency_name || 'TripNetwork Partner';
+
+            let descriptionHtml = `<div style="white-space: pre-wrap;">${pkg.description || ''}</div>`;
+            try {
+                if (pkg.description && pkg.description.startsWith('{')) {
+                    const info = JSON.parse(pkg.description);
+                    descriptionHtml = `
+                        <div style="background: #f1f5f9; padding: 20px; border-radius: 8px; margin-top: 10px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                                <div><span style="color: #64748b; font-size: 12px; text-transform: uppercase;">Room Type</span><div style="font-weight: 700; font-size: 18px;">${info.roomType || 'N/A'}</div></div>
+                                <div><span style="color: #64748b; font-size: 12px; text-transform: uppercase;">Bed Type</span><div style="font-weight: 700; font-size: 18px;">${info.bedType || 'N/A'}</div></div>
+                                <div><span style="color: #64748b; font-size: 12px; text-transform: uppercase;">Location</span><div style="font-weight: 700; font-size: 18px;">${info.city || ''}, ${info.country || ''}</div></div>
+                                <div><span style="color: #64748b; font-size: 12px; text-transform: uppercase;">Area</span><div style="font-weight: 700; font-size: 18px;">${info.area || 'N/A'}</div></div>
+                            </div>
+                            <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #e2e8f0;">
+                                <span style="color: #64748b; font-size: 12px; text-transform: uppercase;">Full Address</span>
+                                <div style="font-weight: 600; color: #1e293b;">${info.fullAddress || 'N/A'}</div>
+                            </div>
+                            <div style="color: #475569; line-height: 1.6;">${info.fullDescription || ''}</div>
+                        </div>`;
+                }
+            } catch (e) { }
+
+            content.innerHTML = `
+                <div class="modal-header">
+                    <span class="badge badge-${pkg.package_type.toLowerCase()}">${pkg.package_type}</span>
+                    <h2>${pkg.title}</h2>
+                    <div style="color: #667eea; font-weight: 600;">${pkg.package_type === 'HOTEL' ? '🏨 ' : '🏢 '}${providerName}</div>
+                </div>
+                <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #e2e8f0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <span style="color: #64748b; font-size: 12px; text-transform: uppercase;">Destination</span>
+                            <div style="font-weight: 600;">${pkg.origin ? pkg.origin + ' → ' : ''}${pkg.destination}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="color: #64748b; font-size: 12px; text-transform: uppercase;">Price</span>
+                            <div style="font-size: 24px; font-weight: 800; color: #667eea;">৳${pkg.price}</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="padding: 10px 0;">
+                    <h3 style="margin-bottom: 10px; color: #1e293b;">Package Details</h3>
+                    ${descriptionHtml}
+                </div>`;
+
+            const pkgJson = JSON.stringify(pkg).replace(/'/g, "&apos;");
+            actionContainer.innerHTML = `<button class="btn" style="padding: 12px 60px; font-weight: 700; font-size: 16px;" onclick='buyPackage(${pkgJson})'>Book This Now</button>`;
+            modal.style.display = 'block';
+        }
+        async function submitCustomRequest(event) {
+            event.preventDefault();
+            const btn = document.getElementById('submitCustomBtn');
+            const data = {
+                destination: document.getElementById('customDestination').value,
+                departure_date: document.getElementById('customDate').value,
+                budget: parseFloat(document.getElementById('customBudget').value),
+                num_people: parseInt(document.getElementById('customPeople').value),
+                description: document.getElementById('customDesc').value
+            };
+            btn.disabled = true; btn.textContent = 'Submitting...';
+            try {
+                const res = await fetch('/api/custom-requests', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (result.success) {
+                    alert('Request submitted! Agencies will start bidding soon.');
+                    event.target.reset();
+                    fetchMyCustomRequests();
+                } else alert('Error: ' + result.message);
+            } catch (e) { alert('Submission failed.'); }
+            finally { btn.disabled = false; btn.textContent = 'Submit Custom Request'; }
+        }
+
+        async function fetchMyCustomRequests() {
+            const container = document.getElementById('customRequestsList');
+            const section = document.getElementById('customRequestsSection');
+            try {
+                const response = await fetch('/api/custom-requests/my-requests', { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await response.json();
+                if (data.success && data.data.length > 0) {
+                    myCustomRequests = data.data;
+                    section.style.display = 'block';
+                    container.innerHTML = '';
+                    myCustomRequests.forEach((req, index) => container.appendChild(createCustomRequestCard(req, index)));
+                }
+            } catch (error) { console.error('Error fetching custom requests:', error); }
+        }
+
+        function createCustomRequestCard(req, index) {
+            const metadata = JSON.parse(req.description);
+            const div = document.createElement('div');
+            div.className = 'package-card';
+            const bidCount = metadata.bids.length;
+            const status = req.status;
+            div.innerHTML = `
+                <div class="package-header">
+                    <span class="badge ${status === 'PENDING' ? 'badge-travel' : 'status-approved'}">${status}</span>
+                    <span class="package-route">${metadata.departureDate}</span>
+                </div>
+                <div class="package-body">
+                    <div class="package-title">${req.title}</div>
+                    <div class="package-desc">${metadata.numPeople} Traveler(s) • Budget: ৳${metadata.budget}</div>
+                    <div style="margin-top: 10px; font-weight: 700; color: #667eea;">${bidCount} Bid(s) Received</div>
+                    <div class="package-meta">
+                        <button class="btn" style="width: 100%;" onclick="viewBidsByIndex(${index})">
+                            ${status === 'PENDING' ? 'View & Accept Bids' : 'View Details'}
+                        </button>
+                    </div>
+                </div>`;
+            return div;
+        }
+
+        function viewBidsByIndex(index) {
+            const req = myCustomRequests[index];
+            if (!req) return;
+            const metadata = JSON.parse(req.description);
+            const content = document.getElementById('detailsContent');
+            const actionContainer = document.getElementById('detailsActionBtnContainer');
+            const modal = document.getElementById('packageDetailsModal');
+
+            let bidsHtml = '<p style="color: #666;">No bids yet. Agencies are reviewing your request.</p>';
+            if (metadata.bids.length > 0) {
+                bidsHtml = metadata.bids.map(bid => `
+                    <div style="background: white; border: 1px solid #e2e8f0; padding: 15px; border-radius: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 700; color: #2d3748;">${bid.agencyName}</div>
+                            <div style="font-size: 13px; color: #4a5568;">${bid.message}</div>
+                            <div style="font-size: 18px; font-weight: 800; color: #667eea; margin-top: 5px;">৳${bid.amount}</div>
+                        </div>
+                        ${req.status === 'PENDING' ? `<button class="btn" onclick="acceptBid(${req.package_id}, ${bid.agencyId})">Accept Bid</button>` : ''}
+                    </div>
+                `).join('');
+            }
+
+            content.innerHTML = `
+                <div class="modal-header">
+                    <h2>Bids for ${req.title}</h2>
+                    <p style="color: #666;">Choose the best offer for your custom trip.</p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <div style="font-size: 14px; font-weight: 600; color: #1e293b;">Your Requirements:</div>
+                    <div style="background: #f8fafc; padding: 10px; border-radius: 4px; font-size: 13px; border-left: 4px solid #667eea;">${metadata.description || 'No description provided.'}</div>
+                </div>
+                <div style="max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                    ${bidsHtml}
+                </div>`;
+
+            actionContainer.innerHTML = ''; // No default action
+            modal.style.display = 'block';
+        }
+
+        async function acceptBid(requestId, agencyId) {
+            if (!confirm('Accept this bid? This will finalize your custom trip.')) return;
+            try {
+                const res = await fetch(`/api/custom-requests/${requestId}/accept-bid`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ agencyId })
+                });
+                const result = await res.json();
+                if (result.success) {
+                    alert(result.message);
+
+                    // Automatically initiate payment
+                    try {
+                        const paymentRes = await fetch('/api/payment/init', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                            body: JSON.stringify({ bookingId: result.data.bookingId })
+                        });
+                        const paymentData = await paymentRes.json();
+                        if (paymentData.success && paymentData.url) {
+                            window.location.href = paymentData.url;
+                            return; // Stop further processing as we are redirecting
+                        }
+                    } catch (payErr) {
+                        console.error('Auto-payment redirection failed:', payErr);
+                        alert('Accepted! However, auto-redirection to payment failed. You can pay from your "My Bookings" section.');
+                    }
+
+                    closeDetailsModal();
+                    fetchMyCustomRequests();
+                    fetchAvailableAgencyPackages();
+                    fetchUserBookings();
+                } else alert('Error: ' + result.message);
+            } catch (e) { alert('Failed to accept bid.'); }
+        }
+
+        function closeDetailsModal() { document.getElementById('packageDetailsModal').style.display = 'none'; }
+    </script>
+</body>
+
+</html>

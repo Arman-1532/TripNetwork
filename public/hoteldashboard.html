@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Dashboard - TripNetwork</title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+    <link rel="stylesheet" href="/stylesheets/dashboard.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>🏨 Hotel Dashboard</h1>
+                <p>Manage your offerings</p>
+            </div>
+            <div>
+                <a href="/" class="btn">Home</a>
+                <button onclick="logout()" class="btn btn-danger">Logout</button>
+            </div>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <!-- Hotel Profile Info -->
+        <div class="card">
+            <h2>🏨 Hotel Information</h2>
+            <form id="hotelInfoForm" onsubmit="handleUpdateProfile(event, 'HOTEL')">
+                <div class="search-grid">
+                    <div class="form-group"><label>Hotel Name</label><input type="text" id="editHotelName"
+                            class="form-control"></div>
+                    <div class="form-group"><label>Hotel Location</label><input type="text" id="editHotelLocation"
+                            class="form-control"></div>
+                    <div class="form-group"><label>Contact Name</label><input type="text" id="editHotelContactName"
+                            class="form-control" required></div>
+                    <div class="form-group"><label>Phone</label><input type="text" id="editHotelPhone"
+                            class="form-control"></div>
+                    <div class="form-group"><label>Trade License ID</label><input type="text" id="editHotelTradeLicense"
+                            class="form-control"></div>
+                    <div class="form-group"><label>Website</label><input type="url" id="editHotelWebsite"
+                            class="form-control"></div>
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;"><label>Address</label><textarea
+                        id="editHotelAddress" class="form-control"></textarea></div>
+                <button type="submit" class="btn" style="width: 100%; font-weight: 700;">Update Hotel Info</button>
+            </form>
+        </div>
+
+        <!-- Detailed Hotel Offering Form -->
+        <div class="card">
+            <h2>🏨 Post Hotel Offering</h2>
+            <form id="postHotelOfferingForm" onsubmit="handlePostHotelOffering(event)">
+                <div style="font-weight: 700; color: #667eea; margin: 20px 0 10px 0; border-bottom: 1px solid #eee;">📍
+                    Location Details</div>
+                <div class="search-grid">
+                    <div class="form-group"><label>Country</label><input type="text" id="hotelCountry"
+                            class="form-control" required></div>
+                    <div class="form-group"><label>City</label><input type="text" id="hotelCity" class="form-control"
+                            required></div>
+                    <div class="form-group"><label>Area</label><input type="text" id="hotelArea" class="form-control">
+                    </div>
+                    <div class="form-group"><label>Full Address</label><input type="text" id="hotelFullAddress"
+                            class="form-control" required></div>
+                </div>
+                <div style="font-weight: 700; color: #667eea; margin: 20px 0 10px 0; border-bottom: 1px solid #eee;">🛏️
+                    Room Details</div>
+                <div class="search-grid">
+                    <div class="form-group"><label>Room Type</label><select id="hotelRoomType" class="form-control">
+                            <option>Single</option>
+                            <option>Double</option>
+                            <option>Suite</option>
+                            <option>Deluxe</option>
+                        </select></div>
+                    <div class="form-group"><label>Price (BDT)</label><input type="number" id="hotelRoomPrice"
+                            class="form-control" required></div>
+                    <div class="form-group"><label>Bed Type</label><input type="text" id="hotelBedType"
+                            class="form-control"></div>
+                </div>
+                <div class="form-group"><label>Detailed Description</label><textarea id="hotelFullDesc"
+                        class="form-control" required></textarea></div>
+                <div class="form-group"><label>Short Title</label><input type="text" id="hotelShortTitle"
+                        class="form-control" required></div>
+                <button type="submit" class="btn" style="width: 100%; font-weight: 700; padding: 15px;">Post
+                    Offering</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>📋 My Posted Hotel Packages</h2>
+            <div id="myHotelPackages" class="package-grid"></div>
+            <div id="myHotelPackagesLoading" class="loading">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        const role = (user.role || '').toUpperCase();
+        const pType = (user.providerType || '').toUpperCase();
+
+        if (!token || role !== 'PROVIDER' || pType !== 'HOTEL') {
+            window.location.href = '/login.html';
+        }
+
+        populateHotelForm(user);
+        fetchHotelPackages();
+
+        function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login.html'; }
+
+        function populateHotelForm(u) {
+            document.getElementById('editHotelName').value = u.hotelName || '';
+            document.getElementById('editHotelLocation').value = u.hotelLocation || '';
+            document.getElementById('editHotelContactName').value = u.name || '';
+            document.getElementById('editHotelPhone').value = u.phone || '';
+            document.getElementById('editHotelTradeLicense').value = u.tradeLicenseId || '';
+            document.getElementById('editHotelAddress').value = u.address || '';
+            document.getElementById('editHotelWebsite').value = u.website || '';
+        }
+
+        async function handleUpdateProfile(event) {
+            event.preventDefault();
+            const btn = event.target.querySelector('button');
+            btn.disabled = true; btn.textContent = 'Updating...';
+            const profileData = {
+                hotelName: document.getElementById('editHotelName').value,
+                hotelLocation: document.getElementById('editHotelLocation').value,
+                name: document.getElementById('editHotelContactName').value,
+                phone: document.getElementById('editHotelPhone').value,
+                tradeLicenseId: document.getElementById('editHotelTradeLicense').value,
+                address: document.getElementById('editHotelAddress').value,
+                website: document.getElementById('editHotelWebsite').value
+            };
+            try {
+                const response = await fetch('/api/users/profile', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(profileData)
+                });
+                const data = await response.json();
+                if (data.success) { alert('Updated!'); fetchUserProfile(); }
+                else alert('Failed: ' + data.message);
+            } catch (e) { alert('Error.'); } finally { btn.disabled = false; btn.textContent = 'Update'; }
+        }
+
+        async function fetchUserProfile() {
+            const res = await fetch('/api/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            if (data.success) localStorage.setItem('user', JSON.stringify(data.data.user));
+        }
+
+        async function handlePostHotelOffering(event) {
+            event.preventDefault();
+            const btn = event.target.querySelector('button'); btn.disabled = true;
+            const detailedInfo = {
+                country: document.getElementById('hotelCountry').value,
+                city: document.getElementById('hotelCity').value,
+                area: document.getElementById('hotelArea').value,
+                fullAddress: document.getElementById('hotelFullAddress').value,
+                roomType: document.getElementById('hotelRoomType').value,
+                bedType: document.getElementById('hotelBedType').value,
+                fullDescription: document.getElementById('hotelFullDesc').value,
+            };
+            const pkgData = {
+                title: document.getElementById('hotelShortTitle').value,
+                destination: document.getElementById('hotelCity').value,
+                price: parseFloat(document.getElementById('hotelRoomPrice').value),
+                description: JSON.stringify(detailedInfo)
+            };
+            try {
+                const res = await fetch('/api/hotels/packages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(pkgData)
+                });
+                if ((await res.json()).success) { alert('Posted!'); fetchHotelPackages(); }
+            } catch (e) { } finally { btn.disabled = false; }
+        }
+
+        async function fetchHotelPackages() {
+            const res = await fetch('/api/hotels/my-packages', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            const container = document.getElementById('myHotelPackages');
+            document.getElementById('myHotelPackagesLoading').style.display = 'none';
+            container.innerHTML = '';
+            (data.data || []).forEach(pkg => {
+                const div = document.createElement('div');
+                div.className = 'package-card';
+                div.innerHTML = `<div class="package-header"><span>${pkg.package_type}</span></div><div class="package-body"><div>${pkg.title}</div><div>৳${pkg.price}</div></div>`;
+                container.appendChild(div);
+            });
+        }
+    </script>
+</body>
+
+</html>

@@ -129,7 +129,7 @@
             text-decoration: underline;
         }
 
-        .token-display {
+        /* .token-display {
             margin-top: 20px;
             padding: 15px;
             background: #f8f9fa;
@@ -145,7 +145,7 @@
 
         .token-display code {
             color: #667eea;
-        }
+        }*/
     </style>
 </head>
 
@@ -175,10 +175,10 @@
             <p><a href="/">← Back to Home</a></p>
         </div>
 
-        <div id="tokenDisplay" class="token-display">
+        <!-- <div id="tokenDisplay" class="token-display">
             <strong>Token saved!</strong><br>
             <code id="tokenValue"></code>
-        </div>
+        </div> -->
     </div>
 
     <script>
@@ -224,8 +224,8 @@
                     localStorage.setItem('user', JSON.stringify(data.data.user));
 
                     // Display token
-                    tokenValue.textContent = data.data.token;
-                    tokenDisplay.classList.add('show');
+                    // tokenValue.textContent = data.data.token;
+                    //tokenDisplay.classList.add('show');
 
                     // Redirect based on role
                     setTimeout(() => {
@@ -250,7 +250,8 @@
         // Check if already logged in
         if (localStorage.getItem('token')) {
             const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-            if (storedUser.role === 'admin') {
+            const role = (storedUser.role || '').toUpperCase();
+            if (role === 'ADMIN') {
                 window.location.href = '/admin-dashboard.html';
             } else {
                 window.location.href = '/dashboard.html';
