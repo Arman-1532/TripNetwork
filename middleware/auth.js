@@ -4,7 +4,7 @@
  */
 
 const jwt = require('jsonwebtoken');
-const { User } = require('../models/User');
+const { findUserById } = require('../models/index');
 
 /**
  * Verify JWT token and attach user to request
@@ -35,7 +35,7 @@ const authenticate = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Find user
-    const user = await User.findById(decoded.id);
+    const user = await findUserById(decoded.id);
 
     if (!user) {
       return res.status(401).json({
