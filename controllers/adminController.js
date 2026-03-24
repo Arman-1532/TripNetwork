@@ -3,7 +3,8 @@
  * Handles admin-specific actions like approving providers
  */
 
-const { pool } = require('../config/db');
+const { User, Provider, Agency, Hotel, sequelize } = require('../models/index');
+const { Op } = require('sequelize');
 
 /**
  * Get all pending providers (Agencies & Hotels)
@@ -11,24 +12,42 @@ const { pool } = require('../config/db');
  */
 const getPendingProviders = async (req, res) => {
     try {
-        const query = `
-      SELECT u.user_id, u.name, u.email, u.phone, u.role, u.status, u.created_at,
-             p.provider_type, p.trade_license_id, p.address, p.website,
-             a.agency_name, h.hotel_name
-      FROM user u
-      JOIN provider p ON u.user_id = p.provider_id
-      LEFT JOIN agency a ON u.user_id = a.agency_id
-      LEFT JOIN hotel h ON u.user_id = h.hotel_id
-      WHERE u.status = 'PENDING'
-      ORDER BY u.created_at DESC
-    `;
-
-        const [rows] = await pool.execute(query);
-
-        res.status(200).json({
-            success: true,
-            data: rows
+        const rows = await User.findAll({
+            where: { status: 'PENDING', role: 'PROVIDER' },
+            include: [
+                {
+                    model: Provider,
+                    as: 'provider',
+                    include: [
+                        { model: Agency, as: 'agency' },
+                        { model: Hotel,  as: 'hotel'  }
+                    ]
+                }
+            ],
+            order: [['created_at', 'DESC']]
         });
+
+        // Flatten into the same shape the frontend expects
+        const data = rows.map(u => {
+            const p = u.provider;
+            return {
+                user_id:          u.user_id,
+                name:             u.name,
+                email:            u.email,
+                phone:            u.phone,
+                role:             u.role,
+                status:           u.status,
+                created_at:       u.created_at,
+                provider_type:    p ? p.provider_type    : null,
+                trade_license_id: p ? p.trade_license_id : null,
+                address:          p ? p.address          : null,
+                website:          p ? p.website          : null,
+                agency_name:      p && p.agency ? p.agency.agency_name : null,
+                hotel_name:       p && p.hotel  ? p.hotel.hotel_name   : null
+            };
+        });
+
+        res.status(200).json({ success: true, data });
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -43,47 +62,37 @@ const getPendingProviders = async (req, res) => {
  * PUT /api/admin/providers/:id/approve
  */
 const approveProvider = async (req, res) => {
-    const connection = await pool.getConnection();
+    const t = await sequelize.transaction();
     try {
         const userId = req.params.id;
 
-        await connection.beginTransaction();
-
-        // Update user status
-        const [userResult] = await connection.execute(
-            `UPDATE user SET status = 'ACTIVE' WHERE user_id = ? AND status = 'PENDING'`,
-            [userId]
+        const [updatedCount] = await User.update(
+            { status: 'ACTIVE' },
+            { where: { user_id: userId, status: 'PENDING' }, transaction: t }
         );
 
-        if (userResult.affectedRows === 0) {
-            await connection.rollBack();
+        if (updatedCount === 0) {
+            await t.rollback();
             return res.status(404).json({
                 success: false,
                 message: 'Provider not found or already processed'
             });
         }
 
-        // Update provider approval details
-        await connection.execute(
-            `UPDATE provider SET approved_by_admin = TRUE, approved_at = NOW() WHERE provider_id = ?`,
-            [userId]
+        await Provider.update(
+            { approved_by_admin: true, approved_at: new Date() },
+            { where: { provider_id: userId }, transaction: t }
         );
 
-        await connection.commit();
-
-        res.status(200).json({
-            success: true,
-            message: 'Provider approved successfully'
-        });
+        await t.commit();
+        res.status(200).json({ success: true, message: 'Provider approved successfully' });
     } catch (error) {
-        await connection.rollBack();
+        await t.rollback();
         res.status(500).json({
             success: false,
             message: 'Failed to approve provider',
             error: error.message
         });
-    } finally {
-        connection.release();
     }
 };
 
@@ -95,23 +104,19 @@ const rejectProvider = async (req, res) => {
     try {
         const userId = req.params.id;
 
-        // Update status to BLOCKED (or REJECTED if we had that enum, DB schema has BLOCKED)
-        const [result] = await pool.execute(
-            `UPDATE user SET status = 'BLOCKED' WHERE user_id = ? AND status = 'PENDING'`,
-            [userId]
+        const [updatedCount] = await User.update(
+            { status: 'BLOCKED' },
+            { where: { user_id: userId, status: 'PENDING' } }
         );
 
-        if (result.affectedRows === 0) {
+        if (updatedCount === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Provider not found or already processed'
             });
         }
 
-        res.status(200).json({
-            success: true,
-            message: 'Provider rejected successfully'
-        });
+        res.status(200).json({ success: true, message: 'Provider rejected successfully' });
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -121,8 +126,4 @@ const rejectProvider = async (req, res) => {
     }
 };
 
-module.exports = {
-    getPendingProviders,
-    approveProvider,
-    rejectProvider
-};
+module.exports = { getPendingProviders, approveProvider, rejectProvider };
