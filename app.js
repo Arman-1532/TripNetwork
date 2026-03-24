@@ -1,10 +1,14 @@
 // Load environment variables
 require('dotenv').config();
 
-// Set default JWT_SECRET if not provided (for development only)
+// Only allow a fallback JWT secret in development.
 if (!process.env.JWT_SECRET) {
-  console.warn('⚠️  WARNING: JWT_SECRET not set in .env file. Using default (NOT SECURE FOR PRODUCTION)');
-  process.env.JWT_SECRET = 'tripnetwork-default-secret-key-change-in-production';
+  if ((process.env.NODE_ENV || 'development') === 'development') {
+    console.warn('⚠️  WARNING: JWT_SECRET not set in .env file. Using default (NOT SECURE FOR PRODUCTION)');
+    process.env.JWT_SECRET = 'tripnetwork-default-secret-key-change-in-production';
+  } else {
+    throw new Error('JWT_SECRET is required in production');
+  }
 }
 
 var createError = require('http-errors');
@@ -12,6 +16,12 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+
+// Sequelize instance — verifies DB connection on startup
+const { sequelize } = require('./models/index');
+sequelize.authenticate()
+  .then(() => console.log('✅ Database connected successfully (Sequelize)'))
+  .catch(err => console.error('❌ Database connection failed:', err.message));
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -23,6 +33,7 @@ var packagesRouter = require('./routes/packages');
 var hotelsRouter = require('./routes/hotels');
 var bookingsRouter = require('./routes/bookings');
 var customRequestsRouter = require('./routes/customRequests');
+var chatRouter = require('./routes/chat');
 
 
 var app = express();
@@ -48,6 +59,7 @@ app.use('/api/packages', packagesRouter);
 app.use('/api/hotels', hotelsRouter);
 app.use('/api/bookings', bookingsRouter);
 app.use('/api/custom-requests', customRequestsRouter);
+app.use('/api/chat', chatRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
