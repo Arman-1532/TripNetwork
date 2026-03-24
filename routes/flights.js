@@ -1,14 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const Amadeus = require('amadeus');
-const SSLCommerzPayment = require('sslcommerz-lts');
-const { pool } = require('../config/db');
-const { authenticate, authorize } = require('../middleware/auth');
-
-// SSLCommerz configuration
-const store_id = process.env.Store_ID;
-const store_passwd = process.env.Store_Secret_Key;
-const is_live = false;
 
 let amadeus;
 
@@ -17,10 +9,9 @@ if (process.env.AMADEUS_CLIENT_ID && process.env.AMADEUS_CLIENT_SECRET) {
     amadeus = new Amadeus({
         clientId: process.env.AMADEUS_CLIENT_ID,
         clientSecret: process.env.AMADEUS_CLIENT_SECRET,
-        hostname: 'test' // Use 'test' for test environment, 'production' for production
+        hostname: process.env.AMADEUS_HOSTNAME || 'test' // 'test' or 'production'
     });
 
-    // Verify SDK initialization
     console.log('Amadeus SDK initialized');
 } else {
     console.warn('⚠️ Amadeus credentials missing. Search will fallback to mock data.');
@@ -29,7 +20,7 @@ if (process.env.AMADEUS_CLIENT_ID && process.env.AMADEUS_CLIENT_SECRET) {
 /**
  * @route   GET /api/flights/search
  * @desc    Search for flight offers
- * @access  Public (or semi-private if auth added)
+ * @access  Public
  */
 router.get('/search', async (req, res) => {
     const { origin, destination, date, adults } = req.query;
@@ -44,7 +35,6 @@ router.get('/search', async (req, res) => {
             throw new Error('Amadeus credentials missing');
         }
 
-        // Use the Amadeus SDK Flight Offers Search API call
         const response = await amadeus.shopping.flightOffersSearch.get({
             originLocationCode: origin.toUpperCase(),
             destinationLocationCode: destination.toUpperCase(),
@@ -53,10 +43,8 @@ router.get('/search', async (req, res) => {
             max: 10
         });
 
-        // Handle Amadeus API response structure
         let flightData = [];
 
-        // In SDK v11, the response is typically response.data or response.result.data
         if (response && response.data) {
             flightData = Array.isArray(response.data) ? response.data : [];
         } else if (response && response.result && response.result.data) {
@@ -67,15 +55,12 @@ router.get('/search', async (req, res) => {
             flightData = Array.isArray(response.body.data) ? response.body.data : [];
         }
 
-        console.log('✅ Amadeus API Success! Extracted flight data count:', flightData.length);
-
         if (flightData.length > 0) {
             res.set('X-Data-Source', 'amadeus-api');
             return res.json(flightData);
-        } else {
-            console.warn('No flight data found in response');
-            return res.json([]);
         }
+
+        return res.json([]);
     } catch (error) {
         console.error('❌ Amadeus API Error Details:', {
             message: error.message,
@@ -84,7 +69,6 @@ router.get('/search', async (req, res) => {
             response: error.response?.data
         });
 
-        // Return mock data if API fails (for demo purposes)
         console.warn('⚠️ Amadeus API error, returning MOCK DATA (not real API results).');
 
         const mockData = [

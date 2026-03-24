@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { pool } = require('../config/db');
+const { Booking, Payment, Package, sequelize } = require('../models/index');
 const { authenticate, authorize } = require('../middleware/auth');
 
 /**
@@ -12,18 +12,37 @@ router.get('/', authenticate, authorize('traveler'), async (req, res) => {
     const traveler_id = req.user.id;
 
     try {
-        const [rows] = await pool.execute(
-            `SELECT b.*, p.payment_status, p.transaction_id, p.payment_method, p.paid_at 
-             FROM booking b 
-             LEFT JOIN payment p ON b.booking_id = p.booking_id 
-             WHERE b.traveler_id = ? 
-             ORDER BY b.created_at DESC`,
-            [traveler_id]
-        );
+        const bookings = await Booking.findAll({
+            where: { traveler_id },
+            include: [
+                { model: Payment, as: 'payment' },
+                { model: Package, as: 'package' }
+            ],
+            order: [['created_at', 'DESC']]
+        });
+
+        // Flatten for frontend compatibility
+        const data = bookings.map(b => {
+            const plain = b.toJSON();
+            // Flatten payment fields
+            if (plain.payment) {
+                plain.transaction_id = plain.payment.transaction_id;
+                plain.payment_method = plain.payment.payment_method;
+                plain.payment_status = plain.payment.payment_status;
+                plain.paid_at = plain.payment.paid_at;
+                delete plain.payment; // Remove the nested payment object
+            }
+            // Add package title if available
+            if (plain.package) {
+                plain.package_title = plain.package.title;
+                delete plain.package; // Remove the nested package object
+            }
+            return plain;
+        });
 
         res.json({
             success: true,
-            data: rows
+            data: data
         });
     } catch (error) {
         console.error('Error fetching bookings:', error);
@@ -48,77 +67,66 @@ router.post('/', authenticate, authorize('traveler'), async (req, res) => {
         return res.status(400).json({ success: false, message: 'Missing booking details' });
     }
 
-    const connection = await pool.getConnection();
+    let airlineName = null, flightNumber = null, departureAirport = null;
+    let arrivalAirport = null, departureTime = null, arrivalTime = null;
 
+    if (booking_type === 'FLIGHT' && flight_details) {
+        const itinerary    = flight_details.itineraries[0];
+        const firstSegment = itinerary.segments[0];
+        const lastSegment  = itinerary.segments[itinerary.segments.length - 1];
+
+        airlineName      = firstSegment.carrierCode;
+        flightNumber     = firstSegment.number;
+        departureAirport = firstSegment.departure.iataCode;
+        arrivalAirport   = lastSegment.arrival.iataCode;
+        departureTime    = firstSegment.departure.at.replace('T', ' ');
+        arrivalTime      = lastSegment.arrival.at.replace('T', ' ');
+    }
+
+    const t = await sequelize.transaction();
     try {
-        await connection.beginTransaction();
+        const booking = await Booking.create({
+            traveler_id,
+            booking_type,
+            package_id:       package_id || null,
+            airline_name:     airlineName,
+            flight_number:    flightNumber,
+            departure_airport: departureAirport,
+            arrival_airport:  arrivalAirport,
+            departure_time:   departureTime,
+            arrival_time:     arrivalTime,
+            num_people,
+            total_price,
+            booking_status:   'PENDING'
+        }, { transaction: t });
 
-        let airlineName = null;
-        let flightNumber = null;
-        let departureAirport = null;
-        let arrivalAirport = null;
-        let departureTime = null;
-        let arrivalTime = null;
+        const bookingId = booking.booking_id;
+        const trans_id  = `${booking_type}_${bookingId}_${Date.now()}`;
 
-        if (booking_type === 'FLIGHT' && flight_details) {
-            const itinerary = flight_details.itineraries[0];
-            const firstSegment = itinerary.segments[0];
-            const lastSegment = itinerary.segments[itinerary.segments.length - 1];
+        await Payment.create({
+            booking_id:     bookingId,
+            traveler_id,
+            amount:         total_price,
+            payment_method: 'BKASH',
+            transaction_id: trans_id,
+            payment_status: 'PENDING'
+        }, { transaction: t });
 
-            airlineName = firstSegment.carrierCode;
-            flightNumber = firstSegment.number;
-            departureAirport = firstSegment.departure.iataCode;
-            arrivalAirport = lastSegment.arrival.iataCode;
-            departureTime = firstSegment.departure.at.replace('T', ' ');
-            arrivalTime = lastSegment.arrival.at.replace('T', ' ');
-        }
-
-        // 1. Insert into booking table
-        const [bookingResult] = await connection.execute(
-            `INSERT INTO booking 
-             (traveler_id, booking_type, package_id, airline_name, flight_number, 
-              departure_airport, arrival_airport, departure_time, arrival_time, 
-              num_people, total_price, booking_status) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING')`,
-            [
-                traveler_id, booking_type, package_id || null, airlineName, flightNumber,
-                departureAirport, arrivalAirport, departureTime, arrivalTime,
-                num_people, total_price
-            ]
-        );
-
-        const bookingId = bookingResult.insertId;
-        const trans_id = `${booking_type}_${bookingId}_${Date.now()}`;
-
-        // 2. Create Payment Record (Pending)
-        await connection.execute(
-            `INSERT INTO payment (
-                booking_id, traveler_id, amount, payment_method, transaction_id, payment_status
-            ) VALUES (?, ?, ?, 'BKASH', ?, 'PENDING')`,
-            [bookingId, traveler_id, total_price, trans_id]
-        );
-
-        await connection.commit();
+        await t.commit();
 
         res.status(201).json({
             success: true,
             message: 'Booking created successfully',
-            data: {
-                bookingId,
-                totalPrice: total_price
-            }
+            data: { bookingId, totalPrice: total_price }
         });
-
     } catch (error) {
-        await connection.rollback();
+        await t.rollback();
         console.error('Error creating booking:', error);
         res.status(500).json({
             success: false,
             message: 'Failed to create booking',
             error: error.message
         });
-    } finally {
-        connection.release();
     }
 });
 

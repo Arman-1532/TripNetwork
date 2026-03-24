@@ -1,8 +1,7 @@
-
 const express = require('express');
-const router = express.Router();
-const { pool } = require('../config/db');
-const { authenticate, authorize } = require('../middleware/auth');
+const router  = express.Router();
+const { Package, User, sequelize } = require('../models/index');
+const { authenticate, authorize }  = require('../middleware/auth');
 
 /**
  * @route   POST /api/custom-requests
@@ -13,40 +12,33 @@ router.post('/', authenticate, async (req, res) => {
     const { destination, budget, description, num_people, departure_date } = req.body;
     const traveler_id = req.user.id;
 
-    // We use any existing provider as a temporary holder
-    // In a real app, we'd have a system provider ID
-    const dummyProviderId = 2;
+    // Configurable placeholder provider_id for holding custom requests until assigned.
+    const dummyProviderId = parseInt(process.env.CUSTOM_REQUEST_PLACEHOLDER_PROVIDER_ID || '2', 10);
 
     const customMetadata = {
         isCustomRequest: true,
-        travelerId: traveler_id,
-        budget: budget,
-        numPeople: num_people,
-        departureDate: departure_date,
-        bids: []
+        travelerId:      traveler_id,
+        budget,
+        numPeople:       num_people,
+        departureDate:   departure_date,
+        bids:            []
     };
 
     try {
-        const [result] = await pool.execute(
-            `INSERT INTO package (
-                provider_id, package_type, title, description, destination, 
-                price, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [
-                dummyProviderId,
-                'TRAVEL',
-                `Custom Trip: ${destination}`,
-                JSON.stringify(customMetadata),
-                destination,
-                budget || 0,
-                'PENDING' // Pending until a bid is accepted
-            ]
-        );
+        const pkg = await Package.create({
+            provider_id:  Number.isFinite(dummyProviderId) ? dummyProviderId : 2,
+            package_type: 'TRAVEL',
+            title:        `Custom Trip: ${destination}`,
+            description:  JSON.stringify(customMetadata),
+            destination,
+            price:        budget || 0,
+            status:       'PENDING'
+        });
 
         res.status(201).json({
             success: true,
             message: 'Custom travel request submitted successfully',
-            requestId: result.insertId
+            requestId: pkg.package_id
         });
     } catch (error) {
         console.error('Error creating custom request:', error);
@@ -61,16 +53,35 @@ router.post('/', authenticate, async (req, res) => {
  */
 router.get('/available', authenticate, authorize('provider'), async (req, res) => {
     try {
-        const [rows] = await pool.execute(
-            `SELECT p.*, u.name as traveler_name 
-             FROM package p
-             INNER JOIN user u ON (CASE WHEN JSON_VALID(p.description) THEN JSON_UNQUOTE(JSON_EXTRACT(p.description, '$.travelerId')) ELSE NULL END) = u.user_id
-             WHERE JSON_VALID(p.description) 
-             AND p.status = 'PENDING' 
-             AND JSON_CONTAINS(p.description, 'true', '$.isCustomRequest')`
-        );
+        // Fetch all PENDING TRAVEL packages and filter custom requests in JS
+        // (avoids MySQL-specific JSON_VALID / JSON_CONTAINS functions)
+        const rows = await Package.findAll({
+            where: { status: 'PENDING', package_type: 'TRAVEL' }
+        });
 
-        res.json({ success: true, data: rows });
+        const customRequests = rows.filter(pkg => {
+            try {
+                const meta = JSON.parse(pkg.description);
+                return meta && meta.isCustomRequest === true;
+            } catch {
+                return false;
+            }
+        });
+
+        // Attach traveler name for each request
+        const data = await Promise.all(customRequests.map(async pkg => {
+            const plain = pkg.toJSON();
+            try {
+                const meta = JSON.parse(plain.description);
+                const traveler = await User.findOne({ where: { user_id: meta.travelerId } });
+                plain.traveler_name = traveler ? traveler.name : null;
+            } catch {
+                plain.traveler_name = null;
+            }
+            return plain;
+        }));
+
+        res.json({ success: true, data });
     } catch (error) {
         console.error('Error fetching available requests:', error);
         res.status(500).json({ success: false, message: 'Failed to fetch requests' });
@@ -84,15 +95,19 @@ router.get('/available', authenticate, authorize('provider'), async (req, res) =
  */
 router.get('/my-requests', authenticate, async (req, res) => {
     try {
-        const [rows] = await pool.execute(
-            `SELECT * FROM package 
-             WHERE JSON_VALID(description) 
-             AND (CASE WHEN JSON_VALID(description) THEN JSON_UNQUOTE(JSON_EXTRACT(description, '$.travelerId')) ELSE NULL END) = ? 
-             AND JSON_CONTAINS(description, 'true', '$.isCustomRequest')`,
-            [req.user.id]
-        );
+        const rows = await Package.findAll({ where: { package_type: 'TRAVEL' } });
 
-        res.json({ success: true, data: rows });
+        const travelerId = req.user.id;
+        const data = rows.filter(pkg => {
+            try {
+                const meta = JSON.parse(pkg.description);
+                return meta && meta.isCustomRequest && meta.travelerId == travelerId;
+            } catch {
+                return false;
+            }
+        }).map(pkg => pkg.toJSON());
+
+        res.json({ success: true, data });
     } catch (error) {
         console.error('Error fetching my requests:', error);
         res.status(500).json({ success: false, message: 'Failed to fetch requests' });
@@ -105,24 +120,23 @@ router.get('/my-requests', authenticate, async (req, res) => {
  * @access  Provider
  */
 router.post('/:requestId/bid', authenticate, authorize('provider'), async (req, res) => {
-    const { requestId } = req.params;
+    const { requestId }      = req.params;
     const { amount, message } = req.body;
-    const agency_id = req.user.id;
+    const agency_id          = req.user.id;
 
     try {
-        const [rows] = await pool.execute('SELECT description FROM package WHERE package_id = ?', [requestId]);
-        if (rows.length === 0) return res.status(404).json({ success: false, message: 'Request not found' });
+        const pkg = await Package.findOne({ where: { package_id: requestId } });
+        if (!pkg) return res.status(404).json({ success: false, message: 'Request not found' });
 
-        let metadata = JSON.parse(rows[0].description);
+        let metadata = JSON.parse(pkg.description);
 
-        // Add or update bid
         const existingBidIndex = metadata.bids.findIndex(b => b.agencyId === agency_id);
         const newBid = {
-            agencyId: agency_id,
+            agencyId:   agency_id,
             agencyName: req.user.name || 'Agency',
-            amount: parseFloat(amount),
-            message: message,
-            timestamp: new Date().toISOString()
+            amount:     parseFloat(amount),
+            message,
+            timestamp:  new Date().toISOString()
         };
 
         if (existingBidIndex > -1) {
@@ -131,9 +145,9 @@ router.post('/:requestId/bid', authenticate, authorize('provider'), async (req, 
             metadata.bids.push(newBid);
         }
 
-        await pool.execute(
-            'UPDATE package SET description = ? WHERE package_id = ?',
-            [JSON.stringify(metadata), requestId]
+        await Package.update(
+            { description: JSON.stringify(metadata) },
+            { where: { package_id: requestId } }
         );
 
         res.json({ success: true, message: 'Bid submitted successfully' });
@@ -150,110 +164,102 @@ router.post('/:requestId/bid', authenticate, authorize('provider'), async (req, 
  */
 router.post('/:requestId/accept-bid', authenticate, async (req, res) => {
     const { requestId } = req.params;
-    const { agencyId } = req.body;
-    const connection = await pool.getConnection();
+    const { agencyId }  = req.body;
 
+    const t = await sequelize.transaction();
     try {
-        await connection.beginTransaction();
-
-        const [rows] = await connection.execute('SELECT * FROM package WHERE package_id = ?', [requestId]);
-        if (rows.length === 0) {
-            await connection.rollback();
+        const pkg = await Package.findOne({ where: { package_id: requestId }, transaction: t });
+        if (!pkg) {
+            await t.rollback();
             return res.status(404).json({ success: false, message: 'Request not found' });
         }
 
-        let metadata = JSON.parse(rows[0].description);
+        let metadata = JSON.parse(pkg.description);
         if (metadata.travelerId !== req.user.id) {
-            await connection.rollback();
+            await t.rollback();
             return res.status(403).json({ success: false, message: 'Unauthorized' });
         }
 
         const acceptedBid = metadata.bids.find(b => b.agencyId == agencyId);
         if (!acceptedBid) {
-            await connection.rollback();
+            await t.rollback();
             return res.status(404).json({ success: false, message: 'Bid not found' });
         }
 
-        // 1. Update package: change owner to agency, set price, mark as approved
         const updatedMetadata = {
             ...metadata,
             acceptedBid: { ...acceptedBid, acknowledgedByAgency: false },
-            status: 'ACCEPTED',
-            acceptedAt: new Date().toISOString()
+            status:      'ACCEPTED',
+            acceptedAt:  new Date().toISOString()
         };
 
-        await connection.execute(
-            `UPDATE package SET 
-                provider_id = ?, 
-                price = ?, 
-                status = 'APPROVED',
-                description = ?
-             WHERE package_id = ?`,
-            [
-                agencyId,
-                acceptedBid.amount,
-                JSON.stringify(updatedMetadata),
-                requestId
-            ]
+        // 1. Re-assign package to the winning agency
+        await Package.update(
+            {
+                provider_id: agencyId,
+                price:       acceptedBid.amount,
+                status:      'APPROVED',
+                description: JSON.stringify(updatedMetadata)
+            },
+            { where: { package_id: requestId }, transaction: t }
         );
 
-        const [bookingResult] = await connection.execute(
-            `INSERT INTO booking 
-             (traveler_id, booking_type, package_id, num_people, total_price, booking_status) 
-             VALUES (?, 'PACKAGE', ?, ?, ?, 'PENDING')`,
-            [
-                req.user.id,
-                requestId,
-                metadata.numPeople || 1,
-                acceptedBid.amount
-            ]
-        );
+        // 2. Create booking
+        const { Booking, Payment } = require('../models/index');
+        const booking = await Booking.create({
+            traveler_id:    req.user.id,
+            booking_type:   'PACKAGE',
+            package_id:     requestId,
+            num_people:     metadata.numPeople || 1,
+            total_price:    acceptedBid.amount,
+            booking_status: 'PENDING'
+        }, { transaction: t });
 
-        const bookingId = bookingResult.insertId;
+        const bookingId = booking.booking_id;
+        const trans_id  = `CUSTOM_${bookingId}_${Date.now()}`;
 
-        // 3. Create Payment Record (Pending) - Needed for SSLCommerz transaction_id
-        const trans_id = `CUSTOM_${bookingId}_${Date.now()}`;
-        await connection.execute(
-            `INSERT INTO payment (
-                booking_id, traveler_id, amount, payment_method, transaction_id, payment_status
-            ) VALUES (?, ?, ?, 'BKASH', ?, 'PENDING')`,
-            [bookingId, req.user.id, acceptedBid.amount, trans_id]
-        );
+        // 3. Create payment record
+        await Payment.create({
+            booking_id:     bookingId,
+            traveler_id:    req.user.id,
+            amount:         acceptedBid.amount,
+            payment_method: 'BKASH',
+            transaction_id: trans_id,
+            payment_status: 'PENDING'
+        }, { transaction: t });
 
-        await connection.commit();
+        await t.commit();
         res.json({
             success: true,
             message: 'Bid accepted! Redirecting to payment...',
-            data: { bookingId }
+            data:    { bookingId }
         });
     } catch (error) {
-        if (connection) await connection.rollback();
+        await t.rollback();
         console.error('Error accepting bid:', error);
         res.status(500).json({ success: false, message: 'Failed to accept bid' });
-    } finally {
-        if (connection) connection.release();
     }
 });
 
 /**
  * @route   POST /api/custom-requests/:requestId/acknowledge-bid
- * @desc    Agency acknowledges that their bid was accepted (Dismisses notification)
+ * @desc    Agency acknowledges that their bid was accepted
  * @access  Provider
  */
 router.post('/:requestId/acknowledge-bid', authenticate, authorize('provider'), async (req, res) => {
     const { requestId } = req.params;
-    const agency_id = req.user.id;
+    const agency_id     = req.user.id;
 
     try {
-        const [rows] = await pool.execute('SELECT description FROM package WHERE package_id = ?', [requestId]);
-        if (rows.length === 0) return res.status(404).json({ success: false, message: 'Request not found' });
+        const pkg = await Package.findOne({ where: { package_id: requestId } });
+        if (!pkg) return res.status(404).json({ success: false, message: 'Request not found' });
 
-        let metadata = JSON.parse(rows[0].description);
+        let metadata = JSON.parse(pkg.description);
         if (metadata.acceptedBid && metadata.acceptedBid.agencyId == agency_id) {
             metadata.acceptedBid.acknowledgedByAgency = true;
-            await pool.execute(
-                'UPDATE package SET description = ? WHERE package_id = ?',
-                [JSON.stringify(metadata), requestId]
+            await Package.update(
+                { description: JSON.stringify(metadata) },
+                { where: { package_id: requestId } }
             );
             res.json({ success: true, message: 'Notification acknowledged' });
         } else {

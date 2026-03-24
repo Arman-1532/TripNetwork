@@ -1,7 +1,6 @@
-
 const express = require('express');
 const router = express.Router();
-const { pool } = require('../config/db');
+const { Package, Provider, Agency, Hotel } = require('../models/index');
 const { authenticate, authorize } = require('../middleware/auth');
 
 /**
@@ -17,44 +16,28 @@ router.post('/', authenticate, authorize('provider'), async (req, res) => {
         });
     }
 
-    const {
-        title,
-        description,
-        destination,
-        origin,
-        travel_medium,
-        price,
-        is_limited_time,
-        offer_ends_at
-    } = req.body;
-
-    const provider_id = req.user.id; // User ID from decoded token
+    const { title, description, destination, origin, travel_medium, price, is_limited_time, offer_ends_at } = req.body;
+    const provider_id = req.user.id;
 
     try {
-        const [result] = await pool.execute(
-            `INSERT INTO package (
-                provider_id, package_type, title, description, destination, 
-                origin, travel_medium, price, is_limited_time, offer_ends_at, status
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                provider_id,
-                'TRAVEL', // Enforce TRAVEL type
-                title,
-                description,
-                destination,
-                origin,
-                travel_medium,
-                price,
-                is_limited_time || false,
-                offer_ends_at || null,
-                'APPROVED' // Default to approved for demo purposes
-            ]
-        );
+        const pkg = await Package.create({
+            provider_id,
+            package_type:    'TRAVEL',
+            title,
+            description,
+            destination,
+            origin,
+            travel_medium,
+            price,
+            is_limited_time: is_limited_time || false,
+            offer_ends_at:   offer_ends_at || null,
+            status:          'PENDING'
+        });
 
         res.status(201).json({
             success: true,
-            message: 'Travel package created successfully',
-            packageId: result.insertId
+            message: 'Travel package created successfully and is pending approval',
+            packageId: pkg.package_id
         });
     } catch (error) {
         console.error('Error creating package:', error);
@@ -68,24 +51,36 @@ router.post('/', authenticate, authorize('provider'), async (req, res) => {
 
 /**
  * @route   GET /api/packages
- * @desc    Get all active packages
+ * @desc    Get all approved packages
  * @access  Public
  */
 router.get('/', async (req, res) => {
     try {
-        const [rows] = await pool.execute(
-            `SELECT p.*, a.agency_name, h.hotel_name
-             FROM package p 
-             LEFT JOIN agency a ON p.provider_id = a.agency_id 
-             LEFT JOIN hotel h ON p.provider_id = h.hotel_id
-             WHERE p.status = 'APPROVED' 
-             ORDER BY p.created_at DESC`
-        );
-
-        res.json({
-            success: true,
-            data: rows
+        const rows = await Package.findAll({
+            where: { status: 'APPROVED' },
+            include: [
+                {
+                    model: Provider,
+                    as: 'provider',
+                    include: [
+                        { model: Agency, as: 'agency' },
+                        { model: Hotel,  as: 'hotel'  }
+                    ]
+                }
+            ],
+            order: [['created_at', 'DESC']]
         });
+
+        // Flatten provider names for frontend compatibility
+        const data = rows.map(p => {
+            const plain = p.toJSON();
+            plain.agency_name = plain.provider && plain.provider.agency ? plain.provider.agency.agency_name : null;
+            plain.hotel_name  = plain.provider && plain.provider.hotel  ? plain.provider.hotel.hotel_name   : null;
+            delete plain.provider;
+            return plain;
+        });
+
+        res.json({ success: true, data });
     } catch (error) {
         console.error('Error fetching packages:', error);
         res.status(500).json({
@@ -98,29 +93,37 @@ router.get('/', async (req, res) => {
 
 /**
  * @route   GET /api/packages/my-packages
- * @desc    Get packages created by the current provider
- * @access  Provider
+ * @desc    Get packages created by the current provider (non-custom-request ones)
+ * @access  Provider (Agency)
  */
 router.get('/my-packages', authenticate, authorize('provider'), async (req, res) => {
     if (req.user.providerType !== 'AGENCY') {
-        return res.status(403).json({
-            success: false,
-            message: 'Access denied.'
-        });
+        return res.status(403).json({ success: false, message: 'Access denied.' });
     }
 
     const provider_id = req.user.id;
 
     try {
-        const [rows] = await pool.execute(
-            'SELECT * FROM package WHERE provider_id = ? AND package_type = "TRAVEL" AND (NOT JSON_VALID(description) OR (CASE WHEN JSON_VALID(description) THEN JSON_EXTRACT(description, "$.isCustomRequest") ELSE NULL END) IS NULL OR (CASE WHEN JSON_VALID(description) THEN JSON_EXTRACT(description, "$.status") ELSE NULL END) = "ACCEPTED") ORDER BY created_at DESC',
-            [provider_id]
-        );
-
-        res.json({
-            success: true,
-            data: rows
+        const rows = await Package.findAll({
+            where: { provider_id, package_type: 'TRAVEL' },
+            order: [['created_at', 'DESC']]
         });
+
+        // Filter out custom requests that are still pending (not accepted yet)
+        // This mirrors the original SQL logic using JSON parsing in JS
+        const data = rows.filter(pkg => {
+            try {
+                const desc = JSON.parse(pkg.description);
+                if (desc && desc.isCustomRequest) {
+                    return desc.status === 'ACCEPTED';
+                }
+                return true; // not a custom request — always show
+            } catch {
+                return true; // not valid JSON — it's a regular description, show it
+            }
+        });
+
+        res.json({ success: true, data });
     } catch (error) {
         console.error('Error fetching my packages:', error);
         res.status(500).json({
