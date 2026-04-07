@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Redirecting...</title>
+</head>
+
+<body>
+    <script>
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        if (!token) {
+            window.location.href = '/login.html';
+        } else {
+            const role = (user.role || '').toUpperCase();
+            const pType = (user.providerType || '').toUpperCase();
+
+            if (role === 'TRAVELER') {
+                window.location.href = '/travelerdashboard.html';
+            } else if (role === 'PROVIDER') {
+                if (pType === 'HOTEL') {
+                    window.location.href = '/hoteldashboard.html';
+                } else if (pType === 'AGENCY') {
+                    window.location.href = '/agencydashboard.html';
+                } else {
+                    console.error('Invalid provider type:', user.providerType);
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login.html';
+                }
+            } else if (role === 'ADMIN') {
+                window.location.href = '/admin-dashboard.html';
+            } else {
+                console.error('Invalid role:', user.role);
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login.html';
+            }
+        }
+    </script>
+</body>
+
+</html>

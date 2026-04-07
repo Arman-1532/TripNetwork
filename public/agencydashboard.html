@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agency Dashboard - TripNetwork</title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+    <link rel="stylesheet" href="/stylesheets/dashboard.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>🏢 Agency Dashboard</h1>
+                <p>Manage your travel packages</p>
+            </div>
+            <div>
+                <a href="/" class="btn">Home</a>
+                <button onclick="logout()" class="btn btn-danger">Logout</button>
+            </div>
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div class="card" id="notificationsSection"
+            style="display: none; border-left: 5px solid #667eea; background: #f0f7ff;">
+            <h2 style="color: #2c5282;">🔔 New Notifications</h2>
+            <div id="agencyNotifications"></div>
+        </div>
+
+        <div class="card">
+            <h2>🏢 Agency Information</h2>
+            <form id="agencyInfoForm" onsubmit="handleUpdateProfile(event, 'AGENCY')">
+                <div class="search-grid">
+                    <div class="form-group"><label>Agency Name</label><input type="text" id="editAgencyName"
+                            class="form-control"></div>
+                    <div class="form-group"><label>Contact Name</label><input type="text" id="editAgencyContactName"
+                            class="form-control" required></div>
+                    <div class="form-group"><label>Phone</label><input type="text" id="editAgencyPhone"
+                            class="form-control"></div>
+                    <div class="form-group"><label>Trade License ID</label><input type="text"
+                            id="editAgencyTradeLicense" class="form-control"></div>
+                    <div class="form-group"><label>Website</label><input type="url" id="editAgencyWebsite"
+                            class="form-control"></div>
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;"><label>Address</label><textarea
+                        id="editAgencyAddress" class="form-control"></textarea></div>
+                <button type="submit" class="btn" style="width: 100%; font-weight: 700;">Update Agency Info</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>📦 Post New Travel Package</h2>
+            <form id="postAgencyPackageForm" onsubmit="handlePostAgencyPackage(event)">
+                <div class="search-grid">
+                    <div class="form-group"><label>Package Title</label><input type="text" id="agencyPkgTitle"
+                            class="form-control" required></div>
+                    <div class="form-group"><label>Destination</label><input type="text" id="agencyPkgDestination"
+                            class="form-control" required></div>
+                    <div class="form-group"><label>Origin</label><input type="text" id="agencyPkgOrigin"
+                            class="form-control"></div>
+                    <div class="form-group"><label>Price (BDT)</label><input type="number" id="agencyPkgPrice"
+                            class="form-control" required></div>
+                    <div class="form-group">
+                        <label>Travel Medium</label>
+                        <select id="agencyPkgMedium" class="form-control">
+                            <option>BUS</option>
+                            <option>AIR</option>
+                            <option>TRAIN</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group"><label>Description</label><textarea id="agencyPkgDescription"
+                        class="form-control"></textarea></div>
+                <button type="submit" class="btn" style="width: 100%; font-weight: 700;">Post Package</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>🌍 Available Custom Trip Requests</h2>
+            <p style="margin-bottom: 20px; color: #666;">Provide personalized quotes for travelers seeking unique
+                experiences.</p>
+            <div id="availableCustomRequests" class="package-grid"></div>
+            <div id="customRequestsLoading" class="loading">Fetching requests...</div>
+        </div>
+
+        <div class="card">
+            <h2>📋 My Posted Travel Packages</h2>
+            <div id="myAgencyPackages" class="package-grid"></div>
+            <div id="myAgencyPackagesLoading" class="loading">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Bidding Modal -->
+    <div id="bidModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeBidModal()">&times;</span>
+            <div class="modal-header">
+                <h2 id="bidModalTitle">Submit a Quote</h2>
+            </div>
+            <div id="requestSummary"
+                style="background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;">
+            </div>
+            <form id="bidForm" onsubmit="handleBidSubmit(event)">
+                <input type="hidden" id="bidRequestId">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label>Your Quote (BDT)</label>
+                    <input type="number" id="bidAmount" class="form-control" placeholder="e.g. 45000" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label>What are you offering?</label>
+                    <textarea id="bidMessage" class="form-control" placeholder="Describe your plan, inclusions, etc."
+                        style="height: 100px;" required></textarea>
+                </div>
+                <button type="submit" id="submitBidBtn" class="btn" style="width: 100%; font-weight: 700;">Submit
+                    Quote</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        const role = (user.role || '').toUpperCase();
+        const pType = (user.providerType || '').toUpperCase();
+
+        if (!token || role !== 'PROVIDER' || pType !== 'AGENCY') {
+            window.location.href = '/login.html';
+        }
+
+        let availableRequests = [];
+        populateAgencyForm(user);
+        fetchAgencyPackages();
+        fetchAvailableCustomRequests();
+        fetchAgencyNotifications();
+
+        function logout() { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.href = '/login.html'; }
+
+        function populateAgencyForm(u) {
+            document.getElementById('editAgencyName').value = u.agencyName || '';
+            document.getElementById('editAgencyContactName').value = u.name || '';
+            document.getElementById('editAgencyPhone').value = u.phone || '';
+            document.getElementById('editAgencyTradeLicense').value = u.tradeLicenseId || '';
+            document.getElementById('editAgencyAddress').value = u.address || '';
+            document.getElementById('editAgencyWebsite').value = u.website || '';
+        }
+
+        async function handleUpdateProfile(event) {
+            event.preventDefault();
+            const btn = event.target.querySelector('button'); btn.disabled = true;
+            const profileData = {
+                agencyName: document.getElementById('editAgencyName').value,
+                name: document.getElementById('editAgencyContactName').value,
+                phone: document.getElementById('editAgencyPhone').value,
+                tradeLicenseId: document.getElementById('editAgencyTradeLicense').value,
+                address: document.getElementById('editAgencyAddress').value,
+                website: document.getElementById('editAgencyWebsite').value
+            };
+            try {
+                const res = await fetch('/api/users/profile', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(profileData)
+                });
+                if ((await res.json()).success) { alert('Updated!'); fetchUserProfile(); }
+            } catch (e) { } finally { btn.disabled = false; }
+        }
+
+        async function fetchUserProfile() {
+            const res = await fetch('/api/auth/me', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            if (data.success) localStorage.setItem('user', JSON.stringify(data.data.user));
+        }
+
+        async function handlePostAgencyPackage(event) {
+            event.preventDefault();
+            const btn = event.target.querySelector('button'); btn.disabled = true;
+            const pkgData = {
+                title: document.getElementById('agencyPkgTitle').value,
+                destination: document.getElementById('agencyPkgDestination').value,
+                origin: document.getElementById('agencyPkgOrigin').value,
+                price: parseFloat(document.getElementById('agencyPkgPrice').value),
+                travel_medium: document.getElementById('agencyPkgMedium').value,
+                description: document.getElementById('agencyPkgDescription').value
+            };
+            try {
+                const res = await fetch('/api/packages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(pkgData)
+                });
+                if ((await res.json()).success) { alert('Posted!'); fetchAgencyPackages(); }
+            } catch (e) { } finally { btn.disabled = false; }
+        }
+
+        async function fetchAvailableCustomRequests() {
+            const container = document.getElementById('availableCustomRequests');
+            const loading = document.getElementById('customRequestsLoading');
+            try {
+                const response = await fetch('/api/custom-requests/available', { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await response.json();
+                loading.style.display = 'none';
+                container.innerHTML = '';
+                if (data.success && data.data.length > 0) {
+                    availableRequests = data.data;
+                    availableRequests.forEach((req, index) => container.appendChild(createRequestBiddingCard(req, index)));
+                } else container.innerHTML = '<p>No custom trip requests available right now.</p>';
+            } catch (e) { loading.textContent = 'Error fetching requests.'; }
+        }
+
+        function createRequestBiddingCard(req, index) {
+            const metadata = JSON.parse(req.description);
+            const div = document.createElement('div');
+            div.className = 'package-card';
+            div.innerHTML = `
+                <div class="package-header">
+                    <span class="badge badge-travel">CUSTOM</span>
+                    <span class="package-route">${metadata.departureDate || 'Anytime'}</span>
+                </div>
+                <div class="package-body">
+                    <div class="package-title">${req.title}</div>
+                    <div style="font-size: 13px; color: #667eea; font-weight: 600; margin-bottom: 8px;">Requested by: ${req.traveler_name || 'Traveler'}</div>
+                    <div class="package-desc">
+                        <b>Budget:</b> ৳${metadata.budget}<br>
+                        <b>People:</b> ${metadata.numPeople}<br>
+                        <b>Notes:</b> ${metadata.description || 'N/A'}
+                    </div>
+                    <div class="package-meta">
+                        <button class="btn" style="width: 100%;" onclick="openBidModalByIndex(${index})">Submit Quote</button>
+                    </div>
+                </div>`;
+            return div;
+        }
+
+        function openBidModalByIndex(index) {
+            const req = availableRequests[index];
+            if (!req) return;
+            const metadata = JSON.parse(req.description);
+            document.getElementById('bidRequestId').value = req.package_id;
+            document.getElementById('bidModalTitle').textContent = `Quote for ${req.title}`;
+            document.getElementById('requestSummary').innerHTML = `
+                <b>Destination:</b> ${req.destination}<br>
+                <b>Budget:</b> ৳${metadata.budget}<br>
+                <b>Travelers:</b> ${metadata.numPeople}<br>
+                <b>Requirements:</b> ${metadata.description || 'N/A'}
+            `;
+            document.getElementById('bidModal').style.display = 'block';
+        }
+
+        function closeBidModal() { document.getElementById('bidModal').style.display = 'none'; document.getElementById('bidForm').reset(); }
+
+        async function handleBidSubmit(event) {
+            event.preventDefault();
+            const requestId = document.getElementById('bidRequestId').value;
+            const btn = document.getElementById('submitBidBtn');
+            const data = {
+                amount: parseFloat(document.getElementById('bidAmount').value),
+                message: document.getElementById('bidMessage').value
+            };
+            btn.disabled = true; btn.textContent = 'Submitting...';
+            try {
+                const res = await fetch(`/api/custom-requests/${requestId}/bid`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (result.success) {
+                    alert('Quote submitted successfully!');
+                    closeBidModal();
+                    fetchAvailableCustomRequests();
+                } else alert('Error: ' + result.message);
+            } catch (e) { alert('Failed to submit quote.'); }
+            finally { btn.disabled = false; btn.textContent = 'Submit Quote'; }
+        }
+
+        async function fetchAgencyNotifications() {
+            const container = document.getElementById('agencyNotifications');
+            const section = document.getElementById('notificationsSection');
+            try {
+                const res = await fetch('/api/packages/my-packages', { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+                // Filter packages where our bid was accepted and not acknowledged
+                const notifications = (data.data || []).filter(pkg => {
+                    if (!pkg.description) return false;
+                    try {
+                        const meta = JSON.parse(pkg.description);
+                        return meta.acceptedBid && meta.acceptedBid.agencyId == user.id && meta.acceptedBid.acknowledgedByAgency === false;
+                    } catch (e) { return false; }
+                });
+
+                if (notifications.length > 0) {
+                    section.style.display = 'block';
+                    container.innerHTML = notifications.map(n => {
+                        const meta = JSON.parse(n.description);
+                        return `
+                            <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #c3dafe; display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 700;">Bid Accepted: ${n.title}</div>
+                                    <div style="font-size: 13px; color: #4a5568;">The traveler has accepted your quote of ৳${meta.acceptedBid.amount}. A booking has been created.</div>
+                                </div>
+                                <button class="btn btn-sm" onclick="acknowledgeNotification(${n.package_id})">Dismiss</button>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    section.style.display = 'none';
+                }
+            } catch (e) { console.error('Error fetching notifications:', e); }
+        }
+
+        async function acknowledgeNotification(requestId) {
+            try {
+                const res = await fetch(`/api/custom-requests/${requestId}/acknowledge-bid`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if ((await res.json()).success) fetchAgencyNotifications();
+            } catch (e) { }
+        }
+
+        async function fetchAgencyPackages() {
+            const res = await fetch('/api/packages/my-packages', { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = await res.json();
+            const container = document.getElementById('myAgencyPackages');
+            document.getElementById('myAgencyPackagesLoading').style.display = 'none';
+            container.innerHTML = '';
+            (data.data || []).forEach(pkg => {
+                const div = document.createElement('div');
+                div.className = 'package-card';
+                div.innerHTML = `<div class="package-header"><span>${pkg.package_type}</span></div><div class="package-body"><div>${pkg.title}</div><div>৳${pkg.price}</div></div>`;
+                container.appendChild(div);
+            });
+        }
+    </script>
+</body>
+
+</html>

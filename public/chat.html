@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TripNetwork Chat</title>
+  <link rel="stylesheet" href="/stylesheets/style.css" />
+  <style>
+    body { max-width: 900px; margin: 24px auto; font-family: Arial, sans-serif; }
+    #layout { display: grid; grid-template-columns: 280px 1fr; gap: 16px; }
+    #rooms { border: 1px solid #ddd; padding: 12px; height: 70vh; overflow: auto; }
+    #chat { border: 1px solid #ddd; padding: 12px; height: 70vh; display: flex; flex-direction: column; }
+    #topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+    #members { min-width: 240px; max-width: 320px; border: 1px solid #eee; padding: 8px; font-size: 12px; color: #333; }
+    #members strong { display: block; margin-bottom: 6px; }
+    #membersList { max-height: 120px; overflow: auto; }
+    #participants { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #ddd; }
+    #participantsList { max-height: 120px; overflow: auto; }
+    #messages { flex: 1; overflow: auto; border: 1px solid #eee; padding: 8px; }
+    .msg { margin: 8px 0; }
+    .meta { color: #666; font-size: 12px; }
+    .body { white-space: pre-wrap; }
+    #composer { display: flex; gap: 8px; margin-top: 10px; }
+    #composer input { flex: 1; padding: 8px; }
+  </style>
+</head>
+<body>
+  <h2>Package Chat</h2>
+  <p>Requires a valid JWT in <code>localStorage.token</code>.</p>
+
+  <div id="layout">
+    <div id="rooms">
+      <strong>Rooms</strong>
+      <div id="roomList"></div>
+    </div>
+
+    <div id="chat">
+      <div id="topbar">
+        <div><strong id="roomTitle">Select a room</strong></div>
+        <div id="members">
+          <strong>Online now</strong>
+          <div id="membersList">—</div>
+          <div id="participants">
+            <strong>All participants</strong>
+            <div id="participantsList">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="messages"></div>
+      <div id="composer">
+        <input id="messageInput" placeholder="Type a message..." aria-label="Message" />
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Missing token. Login first.');
+    }
+
+    const socket = io({ auth: { token } });
+
+    let currentPackageId = null;
+
+    function renderMembers(members) {
+      const el = document.getElementById('membersList');
+      if (!members || members.length === 0) {
+        el.textContent = '—';
+        return;
+      }
+
+      const lines = members
+        .slice()
+        .sort((a, b) => {
+          // put agency first, then travelers
+          const aIsAgency = a.role === 'provider' && a.providerType === 'AGENCY';
+          const bIsAgency = b.role === 'provider' && b.providerType === 'AGENCY';
+          if (aIsAgency && !bIsAgency) return -1;
+          if (!aIsAgency && bIsAgency) return 1;
+          return (a.name || '').localeCompare(b.name || '');
+        })
+        .map(m => {
+          const label = (m.role === 'provider' && m.providerType === 'AGENCY') ? 'Agency' : 'Traveler';
+          const name = m.name || `User #${m.userId}`;
+          return `${label}: ${name}`;
+        });
+
+      el.innerHTML = '<div>' + lines.map(x => `<div>${x}</div>`).join('') + '</div>';
+    }
+
+    function renderParticipants(participants) {
+      const el = document.getElementById('participantsList');
+      if (!participants || participants.length === 0) {
+        el.textContent = '—';
+        return;
+      }
+
+      const lines = participants.map(p => {
+        const label = (p.role === 'provider' && p.providerType === 'AGENCY') ? 'Agency' : 'Traveler';
+        return `${label}: ${p.name || `User #${p.userId}`}`;
+      });
+
+      el.innerHTML = '<div>' + lines.map(x => `<div>${x}</div>`).join('') + '</div>';
+    }
+
+    function appendMsg(m) {
+      const el = document.createElement('div');
+      el.className = 'msg';
+      const who = m.senderName ? `${m.senderName} (${m.senderRole})` : `User #${m.senderUserId}`;
+      el.innerHTML = `<div class="meta">${new Date(m.createdAt).toLocaleString()} — ${who}</div><div class="body"></div>`;
+      el.querySelector('.body').textContent = m.body;
+      const box = document.getElementById('messages');
+      box.appendChild(el);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    async function loadRooms() {
+      const res = await fetch('/api/chat/rooms', { headers: { Authorization: `Bearer ${token}` } });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.message || 'Failed');
+
+      const list = document.getElementById('roomList');
+      list.innerHTML = '';
+
+      json.data.forEach(r => {
+        const btn = document.createElement('button');
+        btn.style.display = 'block';
+        btn.style.width = '100%';
+        btn.style.margin = '6px 0';
+        btn.textContent = `#${r.packageId} ${r.title}`;
+        btn.onclick = () => selectRoom(r);
+        list.appendChild(btn);
+      });
+    }
+
+    function selectRoom(room) {
+      currentPackageId = room.packageId;
+      document.getElementById('roomTitle').textContent = room.title;
+      document.getElementById('messages').innerHTML = '';
+      renderMembers([]);
+      renderParticipants([]);
+
+      socket.emit('chat:join', { packageId: currentPackageId });
+      socket.emit('chat:history', { packageId: currentPackageId, limit: 100 });
+      socket.emit('chat:members', { packageId: currentPackageId });
+      socket.emit('chat:participants', { packageId: currentPackageId });
+    }
+
+    document.getElementById('sendBtn').onclick = () => {
+      const input = document.getElementById('messageInput');
+      const body = input.value;
+      if (!currentPackageId) return alert('Select a room first');
+      socket.emit('chat:message', { packageId: currentPackageId, body });
+      input.value = '';
+    };
+
+    socket.on('connect_error', (err) => {
+      console.error('connect_error', err.message);
+      alert('Socket auth failed: ' + err.message);
+    });
+
+    socket.on('chat:error', (e) => {
+      console.warn('chat:error', e);
+      alert(e.message || 'Chat error');
+    });
+
+    socket.on('chat:history', ({ messages }) => {
+      messages.forEach(appendMsg);
+    });
+
+    socket.on('chat:message', (m) => {
+      appendMsg(m);
+    });
+
+    socket.on('chat:members', ({ packageId, members }) => {
+      if (!currentPackageId || Number(packageId) !== Number(currentPackageId)) return;
+      renderMembers(members);
+    });
+
+    socket.on('chat:participants', ({ packageId, participants }) => {
+      if (!currentPackageId || Number(packageId) !== Number(currentPackageId)) return;
+      renderParticipants(participants);
+    });
+
+    loadRooms().catch(err => {
+      console.error(err);
+      alert('Failed to load rooms');
+    });
+  </script>
+</body>
+</html>

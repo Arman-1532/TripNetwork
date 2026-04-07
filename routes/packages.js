@@ -1,0 +1,137 @@
+const express = require('express');
+const router = express.Router();
+const { Package, Provider, Agency, Hotel } = require('../models/index');
+const { authenticate, authorize } = require('../middleware/auth');
+
+/**
+ * @route   POST /api/packages
+ * @desc    Create a new travel package
+ * @access  Provider (Agency)
+ */
+router.post('/', authenticate, authorize('provider'), async (req, res) => {
+    if (req.user.providerType !== 'AGENCY') {
+        return res.status(403).json({
+            success: false,
+            message: 'Access denied. Only travel agencies can post travel packages.'
+        });
+    }
+
+    const { title, description, destination, origin, travel_medium, price, is_limited_time, offer_ends_at } = req.body;
+    const provider_id = req.user.id;
+
+    try {
+        const pkg = await Package.create({
+            provider_id,
+            package_type:    'TRAVEL',
+            title,
+            description,
+            destination,
+            origin,
+            travel_medium,
+            price,
+            is_limited_time: is_limited_time || false,
+            offer_ends_at:   offer_ends_at || null,
+            status:          'PENDING'
+        });
+
+        res.status(201).json({
+            success: true,
+            message: 'Travel package created successfully and is pending approval',
+            packageId: pkg.package_id
+        });
+    } catch (error) {
+        console.error('Error creating package:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to create package',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * @route   GET /api/packages
+ * @desc    Get all approved packages
+ * @access  Public
+ */
+router.get('/', async (req, res) => {
+    try {
+        const rows = await Package.findAll({
+            where: { status: 'APPROVED' },
+            include: [
+                {
+                    model: Provider,
+                    as: 'provider',
+                    include: [
+                        { model: Agency, as: 'agency' },
+                        { model: Hotel,  as: 'hotel'  }
+                    ]
+                }
+            ],
+            order: [['created_at', 'DESC']]
+        });
+
+        // Flatten provider names for frontend compatibility
+        const data = rows.map(p => {
+            const plain = p.toJSON();
+            plain.agency_name = plain.provider && plain.provider.agency ? plain.provider.agency.agency_name : null;
+            plain.hotel_name  = plain.provider && plain.provider.hotel  ? plain.provider.hotel.hotel_name   : null;
+            delete plain.provider;
+            return plain;
+        });
+
+        res.json({ success: true, data });
+    } catch (error) {
+        console.error('Error fetching packages:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch packages',
+            error: error.message
+        });
+    }
+});
+
+/**
+ * @route   GET /api/packages/my-packages
+ * @desc    Get packages created by the current provider (non-custom-request ones)
+ * @access  Provider (Agency)
+ */
+router.get('/my-packages', authenticate, authorize('provider'), async (req, res) => {
+    if (req.user.providerType !== 'AGENCY') {
+        return res.status(403).json({ success: false, message: 'Access denied.' });
+    }
+
+    const provider_id = req.user.id;
+
+    try {
+        const rows = await Package.findAll({
+            where: { provider_id, package_type: 'TRAVEL' },
+            order: [['created_at', 'DESC']]
+        });
+
+        // Filter out custom requests that are still pending (not accepted yet)
+        // This mirrors the original SQL logic using JSON parsing in JS
+        const data = rows.filter(pkg => {
+            try {
+                const desc = JSON.parse(pkg.description);
+                if (desc && desc.isCustomRequest) {
+                    return desc.status === 'ACCEPTED';
+                }
+                return true; // not a custom request — always show
+            } catch {
+                return true; // not valid JSON — it's a regular description, show it
+            }
+        });
+
+        res.json({ success: true, data });
+    } catch (error) {
+        console.error('Error fetching my packages:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to fetch your packages',
+            error: error.message
+        });
+    }
+});
+
+module.exports = router;

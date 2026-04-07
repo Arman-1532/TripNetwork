@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - TripNetwork</title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            color: #495057;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            font-size: 14px;
+        }
+
+        .btn-approve {
+            background-color: #10b981;
+        }
+
+        .btn-reject {
+            background-color: #ef4444;
+            margin-left: 5px;
+        }
+
+        .btn-logout {
+            background-color: #6b7280;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .badge-hotel {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-agency {
+            background-color: #fce7f3;
+            color: #9d174d;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+
+        #error-msg {
+            background: #fee2e2;
+            color: #b91c1c;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Admin Dashboard</h1>
+            <div>
+                <span id="adminName" style="margin-right: 15px; font-weight: 500;"></span>
+                <button onclick="logout()" class="btn btn-logout">Logout</button>
+            </div>
+        </div>
+
+        <div id="error-msg"></div>
+
+        <div class="card">
+            <h2>Pending Approvals</h2>
+            <div id="loading">Loading requests...</div>
+            <div id="tableContainer">
+                <!-- Table will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+        // Check auth
+        if (!token || user.role !== 'admin') {
+            window.location.href = '/login.html';
+        }
+
+        document.getElementById('adminName').textContent = user.name || 'Admin';
+
+        // Fetch pending providers
+        async function fetchPendingProviders() {
+            try {
+                const response = await fetch('/api/admin/pending-providers', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to fetch data');
+
+                const { data } = await response.json();
+                renderTable(data);
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        function renderTable(providers) {
+            const container = document.getElementById('tableContainer');
+
+            if (providers.length === 0) {
+                container.innerHTML = '<div class="empty-state">No pending approvals found. 🎉</div>';
+                return;
+            }
+
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name / Org</th>
+                            <th>Type</th>
+                            <th>Email</th>
+                            <th>License ID</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            providers.forEach(p => {
+                const orgName = p.provider_type === 'HOTEL' ? p.hotel_name : p.agency_name;
+                const badgeClass = p.provider_type === 'HOTEL' ? 'badge-hotel' : 'badge-agency';
+
+                html += `
+                    <tr>
+                        <td>
+                            <strong>${orgName}</strong><br>
+                            <span style="font-size:12px; color:#666">${p.name}</span>
+                        </td>
+                        <td><span class="badge ${badgeClass}">${p.provider_type}</span></td>
+                        <td>
+                            ${p.email}<br>
+                            <span style="font-size:12px; color:#666">${p.phone}</span>
+                        </td>
+                        <td>${p.trade_license_id}</td>
+                        <td>
+                            <button onclick="approveProvider(${p.user_id})" class="btn btn-approve">Approve</button>
+                            <button onclick="rejectProvider(${p.user_id})" class="btn btn-reject">Reject</button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        async function approveProvider(id) {
+            if (!confirm('Approve this provider?')) return;
+            handleAction(id, 'approve');
+        }
+
+        async function rejectProvider(id) {
+            if (!confirm('Reject this provider?')) return;
+            handleAction(id, 'reject');
+        }
+
+        async function handleAction(id, action) {
+            try {
+                const response = await fetch(`/api/admin/providers/${id}/${action}`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    alert(data.message);
+                    fetchPendingProviders(); // Refresh list
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                showError(error.message);
+            }
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('error-msg');
+            el.textContent = msg;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 5000);
+        }
+
+        function logout() {
+            localStorage.clear();
+            window.location.href = '/login.html';
+        }
+
+        // Init
+        fetchPendingProviders();
+    </script>
+</body>
+
+</html>

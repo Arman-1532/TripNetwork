@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - TripNetwork</title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .links {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .links a:hover {
+            text-decoration: underline;
+        }
+
+        .role-specific {
+            display: none;
+        }
+
+        .role-specific.show {
+            display: block;
+        }
+
+        .info-box {
+            background: #e0e7ff;
+            border-left: 4px solid #667eea;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✈️ TripNetwork</h1>
+        <p class="subtitle">Create your account</p>
+
+        <div id="message" class="message"></div>
+
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="role">Account Type</label>
+                <select id="role" name="role" required>
+                    <option value="">Select account type</option>
+                    <option value="traveler">Traveler</option>
+                    <option value="travel_agency">Travel Agency</option>
+                    <option value="hotel_representative">Hotel Representative</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required placeholder="your@email.com">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Minimum 6 characters" minlength="6">
+            </div>
+
+            <!-- Traveler fields -->
+            <div id="travelerFields" class="role-specific">
+                <div class="form-group">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <input type="tel" id="phone" name="phone" placeholder="+1234567890">
+                </div>
+            </div>
+
+            <!-- Travel Agency fields -->
+            <div id="agencyFields" class="role-specific">
+                <div class="form-group">
+                    <label for="agencyName">Agency Name</label>
+                    <input type="text" id="agencyName" name="agencyName" placeholder="Adventure Travel Co.">
+                </div>
+                <div class="form-group">
+                    <label for="agencyNid">NID</label>
+                    <input type="text" id="agencyNid" name="nid" placeholder="1234567890">
+                </div>
+                <div class="form-group">
+                    <label for="agencyTradeLicense">Trade License ID</label>
+                    <input type="text" id="agencyTradeLicense" name="tradeLicenseId" placeholder="TL-2024-001">
+                </div>
+                <div class="form-group">
+                    <label for="agencyAddress">Address</label>
+                    <input type="text" id="agencyAddress" name="address" placeholder="123 Main St, City, Country">
+                </div>
+                <div class="form-group">
+                    <label for="agencyPhone">Phone Number</label>
+                    <input type="tel" id="agencyPhone" name="phone" placeholder="+1234567890">
+                </div>
+            </div>
+
+            <!-- Hotel Representative fields -->
+            <div id="hotelFields" class="role-specific">
+                <div class="form-group">
+                    <label for="hotelName">Hotel Name</label>
+                    <input type="text" id="hotelName" name="hotelName" placeholder="Grand Hotel">
+                </div>
+                <div class="form-group">
+                    <label for="hotelNid">NID</label>
+                    <input type="text" id="hotelNid" name="nid" placeholder="0987654321">
+                </div>
+                <div class="form-group">
+                    <label for="hotelTradeLicense">Trade License ID</label>
+                    <input type="text" id="hotelTradeLicense" name="tradeLicenseId" placeholder="TL-2024-002">
+                </div>
+                <div class="form-group">
+                    <label for="hotelAddress">Address</label>
+                    <input type="text" id="hotelAddress" name="address" placeholder="456 Park Ave, City, Country">
+                </div>
+                <div class="form-group">
+                    <label for="hotelPhone">Phone Number</label>
+                    <input type="tel" id="hotelPhone" name="phone" placeholder="+1234567890">
+                </div>
+            </div>
+
+            <div id="approvalInfo" class="info-box" style="display: none;">
+                <strong>Note:</strong> Travel Agencies and Hotel Representatives require admin approval before they can login.
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn">Register</button>
+        </form>
+
+        <div class="links">
+            <p>Already have an account? <a href="/login.html">Login here</a></p>
+            <p><a href="/">← Back to Home</a></p>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('registerForm');
+        const messageDiv = document.getElementById('message');
+        const submitBtn = document.getElementById('submitBtn');
+        const roleSelect = document.getElementById('role');
+        const travelerFields = document.getElementById('travelerFields');
+        const agencyFields = document.getElementById('agencyFields');
+        const hotelFields = document.getElementById('hotelFields');
+        const approvalInfo = document.getElementById('approvalInfo');
+
+        function showMessage(text, type) {
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type} show`;
+            setTimeout(() => {
+                messageDiv.classList.remove('show');
+            }, 8000);
+        }
+
+        // Show/hide fields based on role
+        roleSelect.addEventListener('change', (e) => {
+            const role = e.target.value;
+            
+            // Hide all fields
+            travelerFields.classList.remove('show');
+            agencyFields.classList.remove('show');
+            hotelFields.classList.remove('show');
+            approvalInfo.style.display = 'none';
+
+            // Show relevant fields
+            if (role === 'traveler') {
+                travelerFields.classList.add('show');
+            } else if (role === 'travel_agency') {
+                agencyFields.classList.add('show');
+                approvalInfo.style.display = 'block';
+            } else if (role === 'hotel_representative') {
+                hotelFields.classList.add('show');
+                approvalInfo.style.display = 'block';
+            }
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const role = document.getElementById('role').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            // Build request data based on role
+            const data = { email, password, role };
+
+            if (role === 'traveler') {
+                data.name = document.getElementById('name').value;
+                data.phone = document.getElementById('phone').value;
+            } else if (role === 'travel_agency') {
+                data.agencyName = document.getElementById('agencyName').value;
+                data.nid = document.getElementById('agencyNid').value;
+                data.tradeLicenseId = document.getElementById('agencyTradeLicense').value;
+                data.address = document.getElementById('agencyAddress').value;
+                data.phone = document.getElementById('agencyPhone').value;
+            } else if (role === 'hotel_representative') {
+                data.hotelName = document.getElementById('hotelName').value;
+                data.nid = document.getElementById('hotelNid').value;
+                data.tradeLicenseId = document.getElementById('hotelTradeLicense').value;
+                data.address = document.getElementById('hotelAddress').value;
+                data.phone = document.getElementById('hotelPhone').value;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Registering...';
+
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    showMessage(result.message, 'success');
+                    
+                    // Save token if provided
+                    if (result.data && result.data.token) {
+                        localStorage.setItem('token', result.data.token);
+                        localStorage.setItem('user', JSON.stringify(result.data.user));
+                        
+                        // If traveler (auto-approved), redirect to dashboard
+                        if (role === 'traveler') {
+                            setTimeout(() => {
+                                window.location.href = '/dashboard.html';
+                            }, 2000);
+                        } else {
+                            // For agencies/hotels, redirect to login after 3 seconds
+                            setTimeout(() => {
+                                window.location.href = '/login.html';
+                            }, 3000);
+                        }
+                    } else {
+                        // Redirect to login after showing message
+                        setTimeout(() => {
+                            window.location.href = '/login.html';
+                        }, 3000);
+                    }
+                } else {
+                    showMessage(result.message || 'Registration failed', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Register';
+                }
+            } catch (error) {
+                showMessage('Network error: ' + error.message, 'error');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Register';
+            }
+        });
+    </script>
+</body>
+</html>
