@@ -3,7 +3,7 @@ const { User, Provider, Package, Booking, ChatMessage } = require('../models');
 
 // Track who is currently connected per package room.
 // Map<packageId, Map<userId, { userId, name, role, providerType }>>
-//var presenceByPackage = new Map();
+const presenceByPackage = new Map();
 
 function normalizeRole(role) {
   return (role || '').toString().toLowerCase();
@@ -12,10 +12,10 @@ function normalizeRole(role) {
 async function buildSocketUser(userId) {
   // Reuse existing user lookup logic (models/index exports ORM models; middleware uses findUserById,
   // but here we only need providerType and role for authorization).
-  // var row = await User.findOne({
-  //   where: { user_id: userId },
-  //   include: [{ model: Provider, as: 'provider' }]
-  // });
+  const row = await User.findOne({
+    where: { user_id: userId },
+    include: [{ model: Provider, as: 'provider' }]
+  });
 
   if (!row) return null;
 
@@ -42,7 +42,7 @@ async function canJoinPackageRoom(user, pkg) {
 
   // Any traveler who booked that package.
   if (user.role === 'traveler') {
-    var booking = await Booking.findOne({
+    const booking = await Booking.findOne({
       where: {
         traveler_id: user.id,
         booking_type: 'PACKAGE',
@@ -57,8 +57,8 @@ async function canJoinPackageRoom(user, pkg) {
 }
 
 function upsertPresence(packageId, user) {
-  var pid = Number(packageId);
-  //if (!presenceByPackage.has(pid)) presenceByPackage.set(pid, new Map());
+  const pid = Number(packageId);
+  if (!presenceByPackage.has(pid)) presenceByPackage.set(pid, new Map());
   const map = presenceByPackage.get(pid);
   map.set(user.id, {
     userId: user.id,
@@ -69,17 +69,17 @@ function upsertPresence(packageId, user) {
 }
 
 function removePresence(packageId, userId) {
-  var pid = Number(packageId);
+  const pid = Number(packageId);
   const map = presenceByPackage.get(pid);
   if (!map) return;
-  //map.delete(userId);
+  map.delete(userId);
   if (map.size === 0) presenceByPackage.delete(pid);
 }
 
 function listPresence(packageId) {
   const pid = Number(packageId);
   const map = presenceByPackage.get(pid);
-  //if (!map) return [];
+  if (!map) return [];
   return Array.from(map.values());
 }
 
@@ -97,13 +97,13 @@ async function getPackageParticipants(pkg) {
   const travelers = await Promise.all(travelerIds.map(id => buildSocketUser(id)));
 
   const all = [];
-  // if (agencyUser) {
-  //   all.push({
-  //     userId: agencyUser.id,
-  //     name: agencyUser.name,
-  //     role: agencyUser.role,
-  //     providerType: agencyUser.providerType || null
-  //   });
+  if (agencyUser) {
+    all.push({
+      userId: agencyUser.id,
+      name: agencyUser.name,
+      role: agencyUser.role,
+      providerType: agencyUser.providerType || null
+    });
   }
 
   for (const t of travelers.filter(Boolean)) {
