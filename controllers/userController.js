@@ -1,7 +1,3 @@
-/**
- * User Controller
- * Handles user profile updates
- */
 
 const { User, Provider, Agency, Hotel, sequelize } = require('../models/index');
 
@@ -11,13 +7,13 @@ const updateProfile = async (req, res) => {
 
     const t = await sequelize.transaction();
     try {
-        // 1. Update base user info
+
         await User.update(
             { name, phone },
             { where: { user_id: userId }, transaction: t }
         );
 
-        // 2. Check role and update sub-tables if provider
+
         const user = await User.findOne({ where: { user_id: userId }, transaction: t });
 
         if (user.role === 'PROVIDER') {
@@ -39,6 +35,8 @@ const updateProfile = async (req, res) => {
                     { where: { hotel_id: userId }, transaction: t }
                 );
             }
+        // } else {
+        //     // If user is a traveler, we can add traveler-specific profile updates here in the future
         }
 
         await t.commit();
