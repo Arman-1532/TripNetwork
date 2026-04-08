@@ -35,8 +35,6 @@ const updateProfile = async (req, res) => {
                     { where: { hotel_id: userId }, transaction: t }
                 );
             }
-        // } else {
-        //     // If user is a traveler, we can add traveler-specific profile updates here in the future
         }
 
         await t.commit();
