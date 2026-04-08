@@ -1,14 +1,9 @@
-/**
- * Authentication Controller
- * Handles user registration and login
- */
 
-const { createUser, authenticateUser, findUserById } = require('../models/index');
+
+const {createUser, authenticateUser, findUserById} = require('../models/index');
 const jwt = require('jsonwebtoken');
 
-/**
- * Generate JWT token for user
- */
+
 const generateToken = (user) => {
     const payload = {
         id: user.id,
@@ -20,10 +15,6 @@ const generateToken = (user) => {
     });
 };
 
-/**
- * Register a new user
- * POST /api/auth/register
- */
 const register = async (req, res) => {
     try {
         const userData = req.body;
