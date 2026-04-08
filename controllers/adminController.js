@@ -1,15 +1,8 @@
-/**
- * Admin Controller
- * Handles admin-specific actions like approving providers
- */
 
 const { User, Provider, Agency, Hotel, sequelize } = require('../models/index');
 const { Op } = require('sequelize');
 
-/**
- * Get all pending providers (Agencies & Hotels)
- * GET /api/admin/pending-providers
- */
+
 const getPendingProviders = async (req, res) => {
     try {
         const rows = await User.findAll({
@@ -27,7 +20,6 @@ const getPendingProviders = async (req, res) => {
             order: [['created_at', 'DESC']]
         });
 
-        // Flatten into the same shape the frontend expects
         const data = rows.map(u => {
             const p = u.provider;
             return {
@@ -96,10 +88,7 @@ const approveProvider = async (req, res) => {
     }
 };
 
-/**
- * Reject a provider
- * PUT /api/admin/providers/:id/reject
- */
+
 const rejectProvider = async (req, res) => {
     try {
         const userId = req.params.id;
