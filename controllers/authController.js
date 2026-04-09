@@ -22,6 +22,11 @@ const register = async (req, res) => {
         const token = generateToken(user);
 
         let message = 'Registration successful';
+        if (user.role === 'traveler') {
+            message = 'Registration successful. You can now login.';
+        } else {
+            message = 'Registration successful. Your account is pending approval.';
+        }
 
         res.status(201).json({
             success: true,
@@ -37,10 +42,20 @@ const register = async (req, res) => {
     }
 };
 
-
+/**
+ * Login user
+ * POST /api/auth/login
+ */
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email and password are required'
+            });
+        }
 
         const user = await authenticateUser(email, password);
         const token = generateToken(user);
@@ -62,12 +77,12 @@ const getCurrentUser = async (req, res) => {
     try {
         const user = await findUserById(req.user.id);
 
-        // if (!user) {
-        //     return res.status(404).json({
-        //         success: false,
-        //         message: 'User not found'
-        //     });
-        // }
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found'
+            });
+        }
 
         const { password, ...sanitized } = user;
         res.status(200).json({
