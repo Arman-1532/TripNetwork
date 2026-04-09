@@ -49,10 +49,6 @@ const getPendingProviders = async (req, res) => {
     }
 };
 
-/**
- * Approve a provider
- * PUT /api/admin/providers/:id/approve
- */
 const approveProvider = async (req, res) => {
     const t = await sequelize.transaction();
     try {
@@ -62,14 +58,6 @@ const approveProvider = async (req, res) => {
             { status: 'ACTIVE' },
             { where: { user_id: userId, status: 'PENDING' }, transaction: t }
         );
-
-        if (updatedCount === 0) {
-            await t.rollback();
-            return res.status(404).json({
-                success: false,
-                message: 'Provider not found or already processed'
-            });
-        }
 
         await Provider.update(
             { approved_by_admin: true, approved_at: new Date() },
@@ -98,12 +86,12 @@ const rejectProvider = async (req, res) => {
             { where: { user_id: userId, status: 'PENDING' } }
         );
 
-        if (updatedCount === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Provider not found or already processed'
-            });
-        }
+        // if (updatedCount === 0) {
+        //     return res.status(404).json({
+        //         success: false,
+        //         message: 'Provider not found or already processed'
+        //     });
+        // }
 
         res.status(200).json({ success: true, message: 'Provider rejected successfully' });
     } catch (error) {
