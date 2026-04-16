@@ -1,5 +1,3 @@
-// Centralized app/domain constants to reduce enum drift across routes/controllers.
-
 const USER_STATUS = {
   ACTIVE: 'ACTIVE',
   PENDING: 'PENDING',
