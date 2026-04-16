@@ -7,9 +7,9 @@ const USER_STATUS = {
 };
 
 const USER_ROLE = {
-  TRAVELER: 'traveler',
-  PROVIDER: 'provider',
-  ADMIN: 'admin'
+  TRAVELER: 'TRAVELER',
+  PROVIDER: 'PROVIDER',
+  ADMIN: 'ADMIN'
 };
 
 const PROVIDER_TYPE = {
