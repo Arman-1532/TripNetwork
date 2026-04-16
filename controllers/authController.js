@@ -1,5 +1,3 @@
-
-
 const {createUser, authenticateUser, findUserById} = require('../models/index');
 const jwt = require('jsonwebtoken');
 
@@ -42,10 +40,7 @@ const register = async (req, res) => {
     }
 };
 
-/**
- * Login user
- * POST /api/auth/login
- */
+
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
