@@ -3,6 +3,30 @@ const router = express.Router();
 const { Package, Provider, Agency, Hotel } = require('../models/index');
 const { authenticate, authorize } = require('../middleware/auth');
 
+// Hide sensitive fields stored in custom-request JSON metadata when returning public curated packages.
+function sanitizeCustomRequestDescription(description) {
+    try {
+        const meta = typeof description === 'string' ? JSON.parse(description) : description;
+        if (!meta || meta.isCustomRequest !== true) return description;
+
+        const sanitized = {
+            isCustomRequest: true,
+            // keep only non-sensitive fields needed to render a card
+            budget: meta.budget,
+            numPeople: meta.numPeople,
+            departureDate: meta.departureDate,
+            status: meta.status,
+            acceptedAt: meta.acceptedAt,
+            // accepted bid amount may be needed to match the package price, but do not expose agencyId/message/timestamps
+            acceptedBid: meta.acceptedBid ? { amount: meta.acceptedBid.amount } : undefined
+        };
+
+        return JSON.stringify(sanitized);
+    } catch {
+        return description;
+    }
+}
+
 /**
  * @route   POST /api/packages
  * @desc    Create a new travel package
@@ -77,6 +101,10 @@ router.get('/', async (req, res) => {
             plain.agency_name = plain.provider && plain.provider.agency ? plain.provider.agency.agency_name : null;
             plain.hotel_name  = plain.provider && plain.provider.hotel  ? plain.provider.hotel.hotel_name   : null;
             delete plain.provider;
+
+            // Prevent leaking custom-request bidding metadata on the public packages feed.
+            plain.description = sanitizeCustomRequestDescription(plain.description);
+
             return plain;
         });
 

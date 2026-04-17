@@ -18,10 +18,25 @@ function getBaseUrl(req) {
     return `${proto}://${host}`;
 }
 
+function getFrontendBaseUrl(req) {
+    // 1. Explicit environment variable (recommended)
+    if (process.env.FRONTEND_BASE_URL) {
+        return process.env.FRONTEND_BASE_URL.replace(/\/$/, '');
+    }
+
+    // 2. Fallback to APP_BASE_URL
+    if (process.env.APP_BASE_URL) {
+        return process.env.APP_BASE_URL.replace(/\/$/, '');
+    }
+
+    // 3. Fallback to request-derived URL (same-origin SPA)
+    return getBaseUrl(req);
+}
+
 /**
  * @route   POST /api/payment/init
  * @desc    Initialize a payment with SSLCommerz (Unified)
- * @access  Private (Traveler)
+ * @access  private
  */
 router.post('/init', authenticate, async (req, res) => {
     const { bookingId } = req.body;
@@ -102,10 +117,9 @@ router.post('/init', authenticate, async (req, res) => {
 });
 
 /**
- * @route   POST /api/payment/success
- * @desc    Handle successful payment redirect
+ * Handle successful payment redirect (SSLCommerz may call GET or POST)
  */
-router.post('/success', async (req, res) => {
+async function handleSuccess(req, res) {
     const tran_id = req.query.tran_id;
     console.log('Payment Successful:', tran_id);
 
@@ -123,22 +137,46 @@ router.post('/success', async (req, res) => {
             );
         }
 
-        res.redirect(`/payment-success.html?tran_id=${encodeURIComponent(tran_id)}`);
+        const frontendBase = getFrontendBaseUrl(req);
+        const redirectUrl  = `${frontendBase}/payment/success?tran_id=${encodeURIComponent(tran_id)}`;
+
+        console.log('Redirecting to SUCCESS:', redirectUrl);
+        return res.redirect(redirectUrl);
     } catch (error) {
         console.error('Error updating payment success:', error);
-        res.redirect('/payment-fail.html');
+        const frontendBase = getFrontendBaseUrl(req);
+        return res.redirect(`${frontendBase}/payment/failed?tran_id=${encodeURIComponent(tran_id)}&error=server`);
     }
-});
+}
 
-router.post('/fail', (req, res) => {
-    console.log('Payment Failed:', req.query.tran_id);
-    res.redirect('/payment-fail.html');
-});
+/**
+ * Handle failed payment redirect (SSLCommerz may call GET or POST)
+ */
+function handleFail(req, res) {
+    const tran_id = req.query.tran_id || '';
+    console.log('Payment Failed:', tran_id);
+    const frontendBase = getFrontendBaseUrl(req);
+    return res.redirect(`${frontendBase}/payment/failed?tran_id=${encodeURIComponent(tran_id)}`);
+}
 
-router.post('/cancel', (req, res) => {
-    console.log('Payment Cancelled:', req.query.tran_id);
-    res.redirect('/dashboard.html');
-});
+/**
+ * Handle cancelled payment redirect (SSLCommerz may call GET or POST)
+ */
+function handleCancel(req, res) {
+    const tran_id = req.query.tran_id || '';
+    console.log('Payment Cancelled:', tran_id);
+    const frontendBase = getFrontendBaseUrl(req);
+    return res.redirect(`${frontendBase}/payment/failed?payment=cancel&tran_id=${encodeURIComponent(tran_id)}`);
+}
+
+router.post('/success', handleSuccess);
+router.get('/success', handleSuccess);
+
+router.post('/fail', handleFail);
+router.get('/fail', handleFail);
+
+router.post('/cancel', handleCancel);
+router.get('/cancel', handleCancel);
 
 router.post('/ipn', (req, res) => {
     console.log('IPN Received:', req.body);
