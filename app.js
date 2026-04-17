@@ -48,6 +48,10 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Serve React/Vite build if present (so redirects to frontend routes don't 404)
+const frontendDistPath = path.join(__dirname, 'frontend', 'dist');
+app.use(express.static(frontendDistPath));
+
 // Routes
 app.use('/', indexRouter);
 app.use('/api/users', usersRouter);
@@ -60,6 +64,17 @@ app.use('/api/hotels', hotelsRouter);
 app.use('/api/bookings', bookingsRouter);
 app.use('/api/custom-requests', customRequestsRouter);
 app.use('/api/chat', chatRouter);
+
+// SPA fallback: return frontend index.html for non-API GET routes
+app.get('*', (req, res, next) => {
+  if (req.originalUrl && req.originalUrl.startsWith('/api')) return next();
+  // Let existing public files be served normally
+  if (req.method !== 'GET') return next();
+
+  return res.sendFile(path.join(frontendDistPath, 'index.html'), (err) => {
+    if (err) return next();
+  });
+});
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
