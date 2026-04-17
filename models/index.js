@@ -4,7 +4,8 @@
  */
 
 const sequelize = require('../config/sequelize');
-const bcrypt    = require('bcrypt');
+// Use bcryptjs (pure JS) instead of native bcrypt to avoid macOS native binary/code-signing issues
+const bcrypt    = require('bcryptjs');
 
 const User     = require('./User');
 const Traveler = require('./Traveler');

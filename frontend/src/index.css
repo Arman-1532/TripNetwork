@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+@theme {
+  --color-on-error-container: #570008;
+  --color-on-surface: #2c2f31;
+  --color-on-primary-fixed: #000000;
+  --color-on-primary-fixed-variant: #00276c;
+  --color-primary-container: #799dff;
+  --color-surface-variant: #c4c8cc;
+  --color-secondary-dim: #435164;
+  --color-primary: #0052d0;
+  --color-inverse-surface: #0b0f10;
+  --color-secondary: #4e5c71;
+  --color-outline: #747779;
+  --color-surface-tint: #0052d0;
+  --color-surface-container: #e5e9eb;
+  --color-tertiary: #883c93;
+  --color-on-tertiary-fixed-variant: #6a1f76;
+  --color-on-secondary-fixed-variant: #4e5c71;
+  --color-inverse-primary: #5e8bff;
+  --color-on-secondary: #edf3ff;
+  --color-background: #f5f7f9;
+  --color-surface-dim: #d0d5d8;
+  --color-primary-fixed: #799dff;
+  --color-tertiary-fixed: #f39cfb;
+  --color-outline-variant: #abadaf;
+  --color-error-dim: #c0001c;
+  --color-tertiary-dim: #7a2f86;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-tertiary-fixed: #41004d;
+  --color-on-error: #ffefee;
+  --color-primary-dim: #0047b7;
+  --color-on-surface-variant: #44474a;
+  --color-on-primary-container: #001e58;
+  --color-surface-container-highest: #d9dde0;
+  --color-inverse-on-surface: #6b6e70;
+  --color-on-secondary-fixed: #324053;
+  --color-secondary-fixed: #d5e3fc;
+  --color-secondary-fixed-dim: #c7d5ed;
+  --color-surface-bright: #f5f7f9;
+  --color-on-background: #2c2f31;
+  --color-tertiary-container: #f39cfb;
+  --color-on-tertiary: #ffeefb;
+  --color-secondary-container: #d5e3fc;
+  --color-error-container: #fb5151;
+  --color-tertiary-fixed-dim: #e48fec;
+  --color-error: #b31b25;
+  --color-on-primary: #f1f2ff;
+  --color-surface-container-high: #dfe3e6;
+  --color-surface: #f5f7f9;
+  --color-primary-fixed-dim: #638eff;
+  --color-on-secondary-container: #455367;
+  --color-on-tertiary-container: #60136d;
+  --color-surface-container-low: #eef1f3;
+
+  --font-headline: "Manrope", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --font-label: "Inter", sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-on-surface;
+    font-family: var(--font-body);
+  }
+
+  /* Ensure form controls always have readable text + placeholder colors */
+  input,
+  textarea,
+  select {
+    @apply text-on-surface placeholder:text-on-surface-variant;
+  }
+
+  /* Dark mode: increase contrast for all the app token-based text colors */
+  .dark {
+    --color-surface: #0b0f10;
+    --color-surface-container-low: #12181a;
+    --color-surface-container: #182023;
+    --color-surface-container-high: #1e282c;
+    --color-surface-container-highest: #263236;
+
+    --color-on-surface: #f5f7f9;
+    --color-on-background: #f5f7f9;
+    --color-on-surface-variant: #c8cdd2;
+    --color-outline-variant: #2c3a40;
+  }
+
+  .dark input,
+  .dark textarea,
+  .dark select {
+    @apply text-on-surface placeholder:text-on-surface-variant;
+  }
+
+  /* In dark mode, many components still use slate-based classes; force readable defaults */
+  .dark body {
+    color: var(--color-on-surface);
+  }
+}
+
+.glass-effect {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
