@@ -5,8 +5,8 @@ import RegisterPage from './Register';
 
 const LoginPage = ({ onLoginSuccess }) => {
   console.log('LoginPage rendering');
-  const [email, setEmail] = useState('traveler_verify_test@example.com');
-  const [password, setPassword] = useState('123456');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showRegister, setShowRegister] = useState(false);
@@ -97,7 +97,7 @@ const LoginPage = ({ onLoginSuccess }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none"
-                placeholder="alex@traveler.com"
+                placeholder="abc@traveler.com"
                 type="email"
                 required
               />

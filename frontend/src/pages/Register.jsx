@@ -80,9 +80,19 @@ const RegisterPage = ({ onRegisterSuccess, onBackToLogin }) => {
 
       const res = await api.auth.register(payload);
       if (res?.success) {
+        // For travelers, automatically log them in
+        if (isTraveler && res?.data?.token) {
+          localStorage.setItem('token', res.data.token);
+          localStorage.setItem('user', JSON.stringify(res.data.user));
+          onRegisterSuccess?.(res.data.user);
+          window.location.assign('/traveler');
+          return;
+        }
+
+        // For providers, show pending approval message
         const msg = isTraveler
-          ? 'Registration successful. You can now login.'
-          : 'Registration successful. Your account is pending approval.';
+          ? 'Registration successful. Logging you in...'
+          : 'Registration successful. Your account is pending admin approval. Please check your email for updates.';
         setSuccess(res?.message || msg);
         onRegisterSuccess?.(res);
         return;
@@ -124,7 +134,7 @@ const RegisterPage = ({ onRegisterSuccess, onBackToLogin }) => {
         )}
 
         {(isAgency || isHotel) && (
-          <div className="p-4 bg-surface-container-low border border-outline-variant/10 rounded-2xl text-xs font-bold text-on-surface dark:text-white/90">
+          <div className="p-4 bg-primary/10 border border-primary/20 rounded-2xl text-xs font-bold text-on-surface dark:text-white/90">
             Note: Providers require admin approval before they can login.
           </div>
         )}
@@ -167,7 +177,7 @@ const RegisterPage = ({ onRegisterSuccess, onBackToLogin }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none"
-                placeholder="your@email.com"
+                placeholder="abc@email.com"
                 type="email"
                 required
               />
@@ -204,7 +214,7 @@ const RegisterPage = ({ onRegisterSuccess, onBackToLogin }) => {
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none"
-                    placeholder="John Doe"
+                    placeholder="Abdullah Arman"
                     required
                   />
                 </div>
@@ -377,4 +387,3 @@ const RegisterPage = ({ onRegisterSuccess, onBackToLogin }) => {
 };
 
 export default RegisterPage;
-
