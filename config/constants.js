@@ -1,3 +1,5 @@
+// Centralized app/domain constants to reduce enum drift across routes/controllers.
+
 const USER_STATUS = {
   ACTIVE: 'ACTIVE',
   PENDING: 'PENDING',
@@ -5,9 +7,9 @@ const USER_STATUS = {
 };
 
 const USER_ROLE = {
-  TRAVELER: 'TRAVELER',
-  PROVIDER: 'PROVIDER',
-  ADMIN: 'ADMIN'
+  TRAVELER: 'traveler',
+  PROVIDER: 'provider',
+  ADMIN: 'admin'
 };
 
 const PROVIDER_TYPE = {
