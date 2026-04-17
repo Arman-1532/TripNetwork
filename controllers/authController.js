@@ -1,7 +1,14 @@
-const {createUser, authenticateUser, findUserById} = require('../models/index');
+/**
+ * Authentication Controller
+ * Handles user registration and login
+ */
+
+const { createUser, authenticateUser, findUserById } = require('../models/index');
 const jwt = require('jsonwebtoken');
 
-
+/**
+ * Generate JWT token for user
+ */
 const generateToken = (user) => {
     const payload = {
         id: user.id,
@@ -13,6 +20,10 @@ const generateToken = (user) => {
     });
 };
 
+/**
+ * Register a new user
+ * POST /api/auth/register
+ */
 const register = async (req, res) => {
     try {
         const userData = req.body;
@@ -40,7 +51,10 @@ const register = async (req, res) => {
     }
 };
 
-
+/**
+ * Login user
+ * POST /api/auth/login
+ */
 const login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -68,6 +82,10 @@ const login = async (req, res) => {
     }
 };
 
+/**
+ * Get current user profile
+ * GET /api/auth/me
+ */
 const getCurrentUser = async (req, res) => {
     try {
         const user = await findUserById(req.user.id);
