@@ -102,6 +102,8 @@ export const api = {
     pendingProviders: () => apiInstance.get('/admin/pending-providers'),
     approveProvider: (id) => apiInstance.put(`/admin/providers/${id}/approve`),
     rejectProvider: (id) => apiInstance.put(`/admin/providers/${id}/reject`),
+    getUsers: () => apiInstance.get('/admin/users'),
+    deleteUser: (id) => apiInstance.delete(`/admin/users/${id}`),
   },
   hotels: {
     search: (params) => apiInstance.get('/hotels/search', { params }),
