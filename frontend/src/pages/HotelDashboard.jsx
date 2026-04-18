@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { api } from '../services/api';
+import { useNavigate } from 'react-router-dom';
 
 const HotelDashboard = () => {
   const [profile, setProfile] = useState({
@@ -60,23 +61,7 @@ const HotelDashboard = () => {
     loadMyPackages();
   }, []);
 
-  const onUpdateProfile = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setSuccess(null);
-
-    try {
-      const res = await api.__raw.users.updateProfile(profile);
-      if (res?.data?.success) {
-        setSuccess('Hotel info updated');
-        await refreshMe();
-      } else {
-        setError(res?.data?.message || 'Update failed');
-      }
-    } catch (err) {
-      setError(err?.response?.data?.message || 'Update failed');
-    }
-  };
+  const navigate = useNavigate();
 
   const [offering, setOffering] = useState({
     country: '',
@@ -139,42 +124,14 @@ const HotelDashboard = () => {
       {error && <div className="p-3 rounded-2xl bg-error-container text-on-error-container text-sm">{error}</div>}
       {success && <div className="p-3 rounded-2xl bg-primary-container/30 text-on-surface dark:text-white text-sm">{success}</div>}
 
-      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-outline-variant/10 p-6 space-y-4">
-        <h2 className="text-lg font-extrabold text-on-surface dark:text-white">Hotel Information</h2>
-        <form onSubmit={onUpdateProfile} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Hotel Name</label>
-              <input className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={profile.hotelName} onChange={(e) => setProfile(p => ({ ...p, hotelName: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Hotel Location</label>
-              <input className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={profile.hotelLocation} onChange={(e) => setProfile(p => ({ ...p, hotelLocation: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Contact Name</label>
-              <input required className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={profile.name} onChange={(e) => setProfile(p => ({ ...p, name: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Phone</label>
-              <input className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={profile.phone} onChange={(e) => setProfile(p => ({ ...p, phone: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Trade License ID</label>
-              <input className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={profile.tradeLicenseId} onChange={(e) => setProfile(p => ({ ...p, tradeLicenseId: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Website</label>
-              <input type="url" className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={profile.website} onChange={(e) => setProfile(p => ({ ...p, website: e.target.value }))} />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-on-surface-variant dark:text-white">Address</label>
-            <textarea className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10 min-h-24" value={profile.address} onChange={(e) => setProfile(p => ({ ...p, address: e.target.value }))} />
-          </div>
-
-          <button className="bg-primary text-on-primary font-bold px-6 py-3 rounded-2xl">Update Hotel Info</button>
-        </form>
+      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-outline-variant/10 p-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-extrabold text-on-surface dark:text-white">Hotel Profile</h2>
+          <p className="text-sm text-on-surface-variant dark:text-white/80">View and update your profile on a separate page.</p>
+        </div>
+        <div>
+          <button onClick={() => navigate('/provider/hotel/profile')} className="bg-primary text-on-primary font-bold px-6 py-3 rounded-2xl">Open Profile</button>
+        </div>
       </section>
 
       <section className="bg-white dark:bg-slate-900 rounded-3xl border border-outline-variant/10 p-6 space-y-4">
@@ -255,4 +212,3 @@ const HotelDashboard = () => {
 };
 
 export default HotelDashboard;
-

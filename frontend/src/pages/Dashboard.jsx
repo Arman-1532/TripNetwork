@@ -6,6 +6,7 @@ import Hero from '../components/Hero';
 import FlightSearch from '../components/FlightSearch';
 import HotelSearch from '../components/HotelSearch';
 import PackageCard from '../components/PackageCard';
+import PassengerDetailsModal from '../components/PassengerDetailsModal';
 
 import useBookAndPay from '../hooks/useBookAndPay';
 import { api } from '../services/api';
@@ -24,6 +25,10 @@ const Dashboard = () => {
   const [hotelResults, setHotelResults] = useState([]);
   const [hotelLoading, setHotelLoading] = useState(false);
   const [hotelError, setHotelError] = useState(null);
+
+  const [selectedFlightOffer, setSelectedFlightOffer] = useState(null);
+  const [showPassengerModal, setShowPassengerModal] = useState(false);
+  const [passengerLoading, setPassengerLoading] = useState(false);
 
   const { bookAndPay, loading: bookPayLoading, error: bookPayError } = useBookAndPay();
 
@@ -88,14 +93,34 @@ const Dashboard = () => {
     });
   };
 
-  const handleBookFlight = async (offer) => {
-    const total = Number(offer?.price?.total || 0);
-    await bookAndPay({
-      booking_type: 'FLIGHT',
-      flight_details: offer,
-      num_people: 1,
-      total_price: total,
-    });
+  const handleBookFlight = (offer) => {
+    setSelectedFlightOffer(offer);
+    setShowPassengerModal(true);
+  };
+
+  const handlePassengerDetailsSubmit = async (passengers) => {
+    setPassengerLoading(true);
+    try {
+      const unitPrice = Number(selectedFlightOffer?.price?.total || 0);
+      const totalPrice = unitPrice * passengers.length;
+      await bookAndPay({
+        booking_type: 'FLIGHT',
+        flight_details: selectedFlightOffer,
+        passengers: passengers,
+        num_people: passengers.length,
+        total_price: totalPrice,
+      });
+      setShowPassengerModal(false);
+    } catch (err) {
+      console.error('Booking failed:', err);
+    } finally {
+      setPassengerLoading(false);
+    }
+  };
+
+  const handleClosePassengerModal = () => {
+    setShowPassengerModal(false);
+    setSelectedFlightOffer(null);
   };
 
   return (
@@ -233,6 +258,17 @@ const Dashboard = () => {
           <div className="text-sm bg-error-container text-on-error-container p-3 rounded-2xl">{bookPayError}</div>
         )}
       </section>
+
+      {/* Passenger Details Modal */}
+      {showPassengerModal && selectedFlightOffer && (
+        <PassengerDetailsModal
+          offer={selectedFlightOffer}
+          numPassengers={1}
+          onConfirm={handlePassengerDetailsSubmit}
+          onCancel={handleClosePassengerModal}
+          loading={passengerLoading}
+        />
+      )}
     </div>
   );
 };

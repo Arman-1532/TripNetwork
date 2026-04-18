@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   Edit3,
   Receipt,
-  HelpCircle,
   LogOut,
   Plane,
   Building2,
@@ -36,6 +35,7 @@ const Sidebar = ({ user, activeTab, setActiveTab, onLogout }) => {
     if (role === 'provider' && providerType === 'HOTEL') {
       return [
         { id: 'hotelDashboard', label: 'Hotel Dashboard', icon: Hotel, path: '/provider/hotel' },
+        { id: 'hotelProfile', label: 'Profile', icon: Edit3, path: '/provider/hotel/profile' },
       ];
     }
 

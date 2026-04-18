@@ -48,7 +48,7 @@ const InvoicesPage = () => {
       )}
 
       {!paymentStatus && tranId && (
-        <div className="p-3 rounded-2xl bg-primary-container/30 text-on-surface text-sm">
+        <div className="p-3 rounded-2xl bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 text-sm border border-green-400">
           Payment success (Tran: {tranId}).
         </div>
       )}

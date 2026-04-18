@@ -15,6 +15,7 @@ import PaymentFailedPage from './pages/PaymentFailed';
 import HotelResultsPage from './pages/HotelResults';
 import HotelDetailsPage from './pages/HotelDetails';
 import { api } from './services/api';
+import HotelProfile from './pages/HotelProfile';
 
 function App() {
   const [user, setUser] = useState(null);
@@ -103,6 +104,9 @@ function App() {
 
           {/* Admin */}
           <Route path="/admin" element={<AdminDashboardPage onLogout={handleLogout} />} />
+
+          {/* Hotel profile */}
+          <Route path="/provider/hotel/profile" element={<HotelProfile />} />
 
           {/* Traveler */}
           <Route path="/traveler" element={<Dashboard />} />

@@ -7,6 +7,7 @@ const AdminDashboardPage = ({ onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState(null);
   const [error, setError] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
 
   const user = useMemo(() => {
     try {
@@ -58,6 +59,10 @@ const AdminDashboardPage = ({ onLogout }) => {
     } finally {
       setActingId(null);
     }
+  };
+
+  const toggleDetails = (id) => {
+    setExpandedId(prev => (prev === id ? null : id));
   };
 
   return (
@@ -117,8 +122,11 @@ const AdminDashboardPage = ({ onLogout }) => {
                     <th className="py-3 px-2">Name / Org</th>
                     <th className="py-3 px-2">Type</th>
                     <th className="py-3 px-2">Email</th>
-                    <th className="py-3 px-2">License</th>
+                    <th className="py-3 px-2">License / NID</th>
+                    <th className="py-3 px-2">Address</th>
+                    <th className="py-3 px-2">Website</th>
                     <th className="py-3 px-2">Actions</th>
+                    <th className="py-3 px-2">Details</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -126,40 +134,65 @@ const AdminDashboardPage = ({ onLogout }) => {
                     const orgName = p.provider_type === 'HOTEL' ? p.hotel_name : p.agency_name;
                     const typeLabel = p.provider_type;
                     return (
-                      <tr key={p.user_id} className="border-t border-outline-variant/10">
-                        <td className="py-4 px-2">
-                          <div className="font-extrabold text-on-surface dark:text-white">{orgName || p.name}</div>
-                          <div className="text-xs text-on-surface-variant dark:text-white/70">{p.name}</div>
-                        </td>
-                        <td className="py-4 px-2">
-                          <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-black bg-surface-container text-on-surface border border-outline-variant/20">
-                            {typeLabel}
-                          </span>
-                        </td>
-                        <td className="py-4 px-2">
-                          <div className="text-on-surface dark:text-white">{p.email}</div>
-                          <div className="text-xs text-on-surface-variant dark:text-white/70">{p.phone || '—'}</div>
-                        </td>
-                        <td className="py-4 px-2 text-on-surface dark:text-white">{p.trade_license_id || '—'}</td>
-                        <td className="py-4 px-2">
-                          <div className="flex items-center gap-2">
+                      <React.Fragment key={p.user_id}>
+                        <tr className="border-t border-outline-variant/10">
+                          <td className="py-4 px-2">
+                            <div className="font-extrabold text-on-surface dark:text-white">{orgName || p.name}</div>
+                            <div className="text-xs text-on-surface-variant dark:text-white/70">{p.name}</div>
+                          </td>
+                          <td className="py-4 px-2">
+                            <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-black bg-surface-container text-on-surface border border-outline-variant/20">
+                              {typeLabel}
+                            </span>
+                          </td>
+                          <td className="py-4 px-2">
+                            <div className="text-on-surface dark:text-white">{p.email}</div>
+                            <div className="text-xs text-on-surface-variant dark:text-white/70">{p.phone || '—'}</div>
+                          </td>
+                          <td className="py-4 px-2 text-on-surface dark:text-white">{p.trade_license_id || '—'}</td>
+                          <td className="py-4 px-2 text-on-surface dark:text-white">{p.address || '—'}</td>
+                          <td className="py-4 px-2 text-on-surface dark:text-white">{p.website ? (<a className="text-primary underline" href={p.website} target="_blank" rel="noreferrer">{p.website}</a>) : '—'}</td>
+                          <td className="py-4 px-2">
+                            <div className="flex items-center gap-2">
+                              <button
+                                disabled={actingId === p.user_id}
+                                onClick={() => handleAction(p.user_id, 'approve')}
+                                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-green-600 text-white font-black disabled:opacity-50"
+                              >
+                                <CheckCircle2 size={16} /> Approve
+                              </button>
+                              <button
+                                disabled={actingId === p.user_id}
+                                onClick={() => handleAction(p.user_id, 'reject')}
+                                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-red-600 text-white font-black disabled:opacity-50"
+                              >
+                                <XCircle size={16} /> Reject
+                              </button>
+                            </div>
+                          </td>
+                          <td className="py-4 px-2">
                             <button
-                              disabled={actingId === p.user_id}
-                              onClick={() => handleAction(p.user_id, 'approve')}
-                              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-green-600 text-white font-black disabled:opacity-50"
+                              onClick={() => toggleDetails(p.user_id)}
+                              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-container text-on-surface font-black hover:bg-surface-container-high"
                             >
-                              <CheckCircle2 size={16} /> Approve
+                              {expandedId === p.user_id ? 'Hide' : 'Details'}
                             </button>
-                            <button
-                              disabled={actingId === p.user_id}
-                              onClick={() => handleAction(p.user_id, 'reject')}
-                              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-red-600 text-white font-black disabled:opacity-50"
-                            >
-                              <XCircle size={16} /> Reject
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+                          </td>
+                        </tr>
+                        {expandedId === p.user_id && (
+                          <tr className="bg-surface-container/40">
+                            <td colSpan={10} className="py-4 px-4 text-sm text-on-surface-variant">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div><strong>Provider Type:</strong> {p.provider_type}</div>
+                                <div><strong>License / NID:</strong> {p.trade_license_id || '—'}</div>
+                                <div><strong>Agency / Hotel:</strong> {p.agency_name || p.hotel_name || '—'}</div>
+                                <div><strong>Address:</strong> {p.address || '—'}</div>
+                                <div className="col-span-2"><strong>Website:</strong> {p.website ? (<a className="text-primary underline" href={p.website} target="_blank" rel="noreferrer">{p.website}</a>) : '—'}</div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     );
                   })}
                 </tbody>
