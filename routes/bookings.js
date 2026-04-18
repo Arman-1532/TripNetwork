@@ -60,7 +60,7 @@ router.get('/', authenticate, authorize('traveler'), async (req, res) => {
  * @access  Traveler
  */
 router.post('/', authenticate, authorize('traveler'), async (req, res) => {
-    const { booking_type, package_id, flight_details, num_people, total_price } = req.body;
+    const { booking_type, package_id, flight_details, num_people, total_price, passengers } = req.body;
     const traveler_id = req.user.id;
 
     if (!booking_type || !num_people || !total_price) {
@@ -97,6 +97,7 @@ router.post('/', authenticate, authorize('traveler'), async (req, res) => {
             arrival_time:     arrivalTime,
             num_people,
             total_price,
+            passenger_details: passengers || [],
             booking_status:   'PENDING'
         }, { transaction: t });
 

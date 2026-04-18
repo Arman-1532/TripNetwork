@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const SSLCommerzPayment = require('sslcommerz-lts');
-const { Booking, Payment } = require('../models/index');
+const { Booking, Payment, User, Traveler } = require('../models/index');
 const { authenticate } = require('../middleware/auth');
+const { sendTicketEmail } = require('../services/emailService');
 
 const store_id     = process.env.Store_ID;
 const store_passwd = process.env.Store_Secret_Key;
@@ -135,6 +136,37 @@ async function handleSuccess(req, res) {
                 { booking_status: 'CONFIRMED' },
                 { where: { booking_id: payment.booking_id } }
             );
+
+            // Fetch booking details for email
+            const booking = await Booking.findOne({
+                where: { booking_id: payment.booking_id },
+                include: [{ model: Traveler, as: 'traveler', include: [{ model: User, as: 'user' }] }]
+            });
+
+            if (booking && booking.passenger_details && booking.passenger_details.length > 0) {
+                // Send tickets via email
+                const emailData = {
+                    email: booking.passenger_details[0].email || booking.traveler?.user?.email,
+                    passengerName: booking.passenger_details[0].fullName,
+                    bookingId: booking.booking_id,
+                    ticketNumber: `TKT${booking.booking_id}${Date.now().toString().slice(-6)}`,
+                    passengers: booking.passenger_details,
+                    airline: booking.airline_name,
+                    flightNumber: booking.flight_number,
+                    departureAirport: booking.departure_airport,
+                    arrivalAirport: booking.arrival_airport,
+                    departureTime: booking.departure_time,
+                    arrivalTime: booking.arrival_time,
+                    price: booking.total_price / booking.num_people
+                };
+
+                const emailSent = await sendTicketEmail(emailData);
+                if (emailSent) {
+                    console.log('✅ Tickets sent successfully to:', emailData.email);
+                } else {
+                    console.log('⚠️ Ticket email sending failed, but payment was successful');
+                }
+            }
         }
 
         const frontendBase = getFrontendBaseUrl(req);

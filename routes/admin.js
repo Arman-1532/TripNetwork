@@ -33,4 +33,18 @@ router.put('/providers/:id/approve', adminController.approveProvider);
  */
 router.put('/providers/:id/reject', adminController.rejectProvider);
 
+/**
+ * @route   GET /api/admin/users
+ * @desc    List all users (admin management)
+ * @access  Admin
+ */
+router.get('/users', adminController.getAllUsers);
+
+/**
+ * @route   DELETE /api/admin/users/:id
+ * @desc    Delete a user and related provider records
+ * @access  Admin
+ */
+router.delete('/users/:id', adminController.deleteUser);
+
 module.exports = router;
