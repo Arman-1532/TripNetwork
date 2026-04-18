@@ -43,6 +43,11 @@ const Booking = sequelize.define('Booking', {
         type: DataTypes.INTEGER,
         allowNull: false
     },
+    passenger_details: {
+        type: DataTypes.JSON,
+        allowNull: true,
+        comment: 'Stores array of passenger information with fullName, passportNumber, nidNumber, phoneNumber, email'
+    },
     checkin_date: {
         type: DataTypes.DATEONLY
     },
