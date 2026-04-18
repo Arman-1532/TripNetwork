@@ -126,4 +126,61 @@ const rejectProvider = async (req, res) => {
     }
 };
 
-module.exports = { getPendingProviders, approveProvider, rejectProvider };
+/**
+ * Get all users (admin management view)
+ * GET /api/admin/users
+ */
+const getAllUsers = async (req, res) => {
+    try {
+        const rows = await User.findAll({
+            order: [['created_at', 'DESC']]
+        });
+
+        const data = rows.map(u => ({
+            user_id: u.user_id,
+            name: u.name,
+            email: u.email,
+            phone: u.phone,
+            role: u.role,
+            status: u.status,
+            created_at: u.created_at
+        }));
+
+        res.status(200).json({ success: true, data });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to fetch users', error: error.message });
+    }
+};
+
+/**
+ * Delete a user and related provider/agency/hotel rows
+ * DELETE /api/admin/users/:id
+ */
+const deleteUser = async (req, res) => {
+    const t = await sequelize.transaction();
+    try {
+        const userId = req.params.id;
+
+        const user = await User.findOne({ where: { user_id: userId } });
+        if (!user) {
+            await t.rollback();
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        // Remove dependent provider/agency/hotel rows if present
+        await Agency.destroy({ where: { agency_id: userId }, transaction: t });
+        await Hotel.destroy({ where: { hotel_id: userId }, transaction: t });
+        await Provider.destroy({ where: { provider_id: userId }, transaction: t });
+
+        // Remove traveler/bookings/payments could be added here if desired
+        await User.destroy({ where: { user_id: userId }, transaction: t });
+
+        await t.commit();
+        res.status(200).json({ success: true, message: 'User deleted successfully' });
+    } catch (error) {
+        await t.rollback();
+        res.status(500).json({ success: false, message: 'Failed to delete user', error: error.message });
+    }
+};
+
+module.exports = { getPendingProviders, approveProvider, rejectProvider, getAllUsers, deleteUser };

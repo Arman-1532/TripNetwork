@@ -11,6 +11,11 @@ if (!process.env.JWT_SECRET) {
   }
 }
 
+// Check Amadeus credentials
+if (!process.env.AMADEUS_CLIENT_ID || !process.env.AMADEUS_CLIENT_SECRET) {
+  console.warn('⚠️ Amadeus credentials missing. Search will fallback to mock data.');
+}
+
 var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
@@ -20,7 +25,36 @@ var logger = require('morgan');
 // Sequelize instance — verifies DB connection on startup
 const { sequelize } = require('./models/index');
 sequelize.authenticate()
-  .then(() => console.log('✅ Database connected successfully (Sequelize)'))
+  .then(async () => {
+    console.log('✅ Database connected successfully (Sequelize)');
+
+    // Ensure there's an admin user available for development/testing
+    try {
+      const { User } = require('./models/index');
+      const bcrypt = require('bcryptjs');
+      const adminEmail = process.env.DEV_ADMIN_EMAIL || 'admin@tripnetwork.com';
+      const adminPassword = process.env.DEV_ADMIN_PASSWORD || 'password';
+
+      const existing = await User.findOne({ where: { email: adminEmail } });
+      if (!existing) {
+        const hash = await bcrypt.hash(adminPassword, 10);
+        await User.create({
+          name: 'System Admin',
+          email: adminEmail,
+          phone: '0000000000',
+          password_hash: hash,
+          role: 'ADMIN',
+          status: 'ACTIVE'
+        });
+        console.log(`✅ Dev admin created: ${adminEmail} / ${adminPassword}`);
+      } else {
+        console.log(`ℹ️ Dev admin exists: ${existing.email}`);
+      }
+    } catch (err) {
+      console.error('Failed to ensure dev admin user:', err.message);
+    }
+
+  })
   .catch(err => console.error('❌ Database connection failed:', err.message));
 
 var indexRouter = require('./routes/index');
