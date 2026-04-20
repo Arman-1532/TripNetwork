@@ -1,7 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { api } from '../services/api';
+import AgencyProfile from './agency/AgencyProfile';
+import AgencyPostPackage from './agency/AgencyPostPackage';
+import AgencyCustomRequests from './agency/AgencyCustomRequests';
+import AgencyMyPackages from './agency/AgencyMyPackages';
 
 const AgencyDashboard = () => {
+  // ─── Shared State ────────────────────────────────────────────────────────────
   const [profile, setProfile] = useState({
     agencyName: '',
     name: '',
@@ -16,9 +22,20 @@ const AgencyDashboard = () => {
   const [success, setSuccess] = useState(null);
 
   const [myPackages, setMyPackages] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
   const [availableRequests, setAvailableRequests] = useState([]);
   const [loadingMy, setLoadingMy] = useState(true);
   const [loadingReq, setLoadingReq] = useState(true);
+
+  const [pkgForm, setPkgForm] = useState({
+    title: '',
+    destination: '',
+    origin: '',
+    price: '',
+    travel_medium: 'BUS',
+    description: ''
+  });
 
   const user = useMemo(() => {
     try {
@@ -28,8 +45,8 @@ const AgencyDashboard = () => {
     }
   }, []);
 
+  // ─── Effects ─────────────────────────────────────────────────────────────────
   useEffect(() => {
-    // Seed form from local user
     setProfile({
       agencyName: user.agencyName || user.agency_name || '',
       name: user.name || '',
@@ -39,6 +56,14 @@ const AgencyDashboard = () => {
       website: user.website || ''
     });
   }, [user]);
+
+  useEffect(() => {
+    loadMyPackages();
+    loadAvailableRequests();
+  }, []);
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────────
+  const clearMessages = () => { setError(null); setSuccess(null); };
 
   const refreshMe = async () => {
     const res = await api.auth.me();
@@ -67,16 +92,10 @@ const AgencyDashboard = () => {
     }
   };
 
-  useEffect(() => {
-    loadMyPackages();
-    loadAvailableRequests();
-  }, []);
-
+  // ─── Handlers ────────────────────────────────────────────────────────────────
   const onUpdateProfile = async (e) => {
     e.preventDefault();
-    setError(null);
-    setSuccess(null);
-
+    clearMessages();
     try {
       const res = await api.__raw.users.updateProfile(profile);
       if (res?.data?.success) {
@@ -90,26 +109,12 @@ const AgencyDashboard = () => {
     }
   };
 
-  const [pkgForm, setPkgForm] = useState({
-    title: '',
-    destination: '',
-    origin: '',
-    price: '',
-    travel_medium: 'BUS',
-    description: ''
-  });
-
   const onPostPackage = async (e) => {
     e.preventDefault();
     setPosting(true);
-    setError(null);
-    setSuccess(null);
-
+    clearMessages();
     try {
-      const body = {
-        ...pkgForm,
-        price: Number(pkgForm.price)
-      };
+      const body = { ...pkgForm, price: Number(pkgForm.price) };
       const res = await api.__raw.packages.create(body);
       if (res?.data?.success) {
         setSuccess('Package posted (pending approval)');
@@ -130,12 +135,9 @@ const AgencyDashboard = () => {
     if (!amount) return;
     const message = window.prompt('Enter offer details');
     if (!message) return;
-
+    clearMessages();
     try {
-      const res = await api.customRequests.bid(reqPkg.package_id, {
-        amount: Number(amount),
-        message
-      });
+      const res = await api.customRequests.bid(reqPkg.package_id, { amount: Number(amount), message });
       if (res?.success) {
         setSuccess('Quote submitted');
         await loadAvailableRequests();
@@ -147,137 +149,105 @@ const AgencyDashboard = () => {
     }
   };
 
+  const startEdit = (pkg) => {
+    setEditingId(pkg.package_id);
+    setEditForm({
+      title: pkg.title || '',
+      destination: pkg.destination || '',
+      origin: pkg.origin || '',
+      price: pkg.price || '',
+      travel_medium: pkg.travel_medium || 'BUS',
+      description: pkg.description || ''
+    });
+  };
+
+  const cancelEdit = () => { setEditingId(null); setEditForm({}); };
+
+  const saveEdit = async (packageId) => {
+    clearMessages();
+    try {
+      const payload = {
+        title: editForm.title,
+        destination: editForm.destination,
+        origin: editForm.origin,
+        price: Number(editForm.price),
+        travel_medium: editForm.travel_medium,
+        description: editForm.description
+      };
+      const res = await api.packages.update(packageId, payload);
+      if (res?.success) {
+        setSuccess('Package updated');
+        setEditingId(null);
+        setEditForm({});
+        await loadMyPackages();
+      } else {
+        setError(res?.message || 'Failed to update package');
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to update package');
+    }
+  };
+
   return (
-    <div className="space-y-10">
-      <div>
-        <h1 className="text-2xl font-black text-on-surface">Agency Dashboard</h1>
-        <p className="text-sm text-on-surface-variant dark:text-white/80">Manage your travel packages</p>
-      </div>
-
-      {error && <div className="p-3 rounded-2xl bg-error-container text-on-error-container text-sm">{error}</div>}
-      {success && <div className="p-3 rounded-2xl bg-primary-container/30 text-on-primary-container text-sm font-medium">{success}</div>}
-
-      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-outline-variant/10 p-6 space-y-4">
-        <h2 className="text-lg font-extrabold text-on-surface dark:text-white">Agency Information</h2>
-        <form onSubmit={onUpdateProfile} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Agency Name</label>
-              <input className="w-full bg-surface-container-low text-on-surface rounded-2xl px-4 py-3 border border-outline-variant/10" value={profile.agencyName} onChange={(e) => setProfile(p => ({ ...p, agencyName: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Contact Name</label>
-              <input required className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={profile.name} onChange={(e) => setProfile(p => ({ ...p, name: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Phone</label>
-              <input className="w-full bg-surface-container-low text-on-surface rounded-2xl px-4 py-3 border border-outline-variant/10" value={profile.phone} onChange={(e) => setProfile(p => ({ ...p, phone: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Trade License ID</label>
-              <input className="w-full bg-surface-container-low text-on-surface rounded-2xl px-4 py-3 border border-outline-variant/10" value={profile.tradeLicenseId} onChange={(e) => setProfile(p => ({ ...p, tradeLicenseId: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Website</label>
-              <input type="url" className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={profile.website} onChange={(e) => setProfile(p => ({ ...p, website: e.target.value }))} />
-            </div>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-on-surface-variant dark:text-white">Address</label>
-            <textarea className="w-full bg-surface-container-low text-on-surface rounded-2xl px-4 py-3 border border-outline-variant/10 min-h-24" value={profile.address} onChange={(e) => setProfile(p => ({ ...p, address: e.target.value }))} />
-          </div>
-
-          <button className="bg-primary text-on-primary font-bold px-6 py-3 rounded-2xl">Update Agency Info</button>
-        </form>
-      </section>
-
-      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-outline-variant/10 p-6 space-y-4">
-        <h2 className="text-lg font-extrabold text-on-surface dark:text-white">Post New Travel Package</h2>
-        <form onSubmit={onPostPackage} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Package Title</label>
-              <input required className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={pkgForm.title} onChange={(e) => setPkgForm(p => ({ ...p, title: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Destination</label>
-              <input required className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={pkgForm.destination} onChange={(e) => setPkgForm(p => ({ ...p, destination: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Origin</label>
-              <input className="w-full bg-surface-container-low text-on-surface rounded-2xl px-4 py-3 border border-outline-variant/10" value={pkgForm.origin} onChange={(e) => setPkgForm(p => ({ ...p, origin: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Price (BDT)</label>
-              <input required type="number" min="0" className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={pkgForm.price} onChange={(e) => setPkgForm(p => ({ ...p, price: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Travel Medium</label>
-              <select className="w-full bg-surface-container-low text-on-surface rounded-2xl px-4 py-3 border border-outline-variant/10" value={pkgForm.travel_medium} onChange={(e) => setPkgForm(p => ({ ...p, travel_medium: e.target.value }))}>
-                <option value="BUS">BUS</option>
-                <option value="AIR">AIR</option>
-                <option value="TRAIN">TRAIN</option>
-              </select>
-            </div>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-on-surface-variant dark:text-white">Description</label>
-            <textarea className="w-full bg-surface-container-low text-on-surface rounded-2xl px-4 py-3 border border-outline-variant/10 min-h-24" value={pkgForm.description} onChange={(e) => setPkgForm(p => ({ ...p, description: e.target.value }))} />
-          </div>
-
-          <button disabled={posting} className="bg-primary text-on-primary font-bold px-6 py-3 rounded-2xl disabled:opacity-50">
-            {posting ? 'Posting...' : 'Post Package'}
-          </button>
-        </form>
-      </section>
-
-      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-outline-variant/10 p-6 space-y-4">
-        <h2 className="text-lg font-extrabold text-on-surface dark:text-white">Available Custom Trip Requests</h2>
-        {loadingReq ? (
-          <div className="text-sm text-on-surface-variant dark:text-white/80">Fetching requests...</div>
-        ) : availableRequests.length === 0 ? (
-          <div className="text-sm text-on-surface-variant dark:text-white/80">No custom trip requests available right now.</div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {availableRequests.map((r) => {
-              let meta = {};
-              try { meta = JSON.parse(r.description); } catch {}
-              return (
-                <div key={r.package_id} className="border border-outline-variant/10 rounded-2xl p-4 bg-surface-container-low">
-                  <div className="font-black text-on-surface">{r.title}</div>
-                  <div className="text-xs text-on-surface-variant dark:text-white/80">Requested by: {r.traveler_name || 'Traveler'}</div>
-                  <div className="text-sm text-on-surface-variant dark:text-white/80 mt-2">
-                    <div><b>Budget:</b> ৳{meta.budget ?? 'N/A'}</div>
-                    <div><b>People:</b> {meta.numPeople ?? 'N/A'}</div>
-                    <div><b>Date:</b> {meta.departureDate ?? 'Anytime'}</div>
-                  </div>
-                  <button onClick={() => onBid(r)} className="mt-3 bg-primary text-on-primary px-4 py-2 rounded-xl font-bold text-sm">Submit Quote</button>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-outline-variant/10 p-6 space-y-4">
-        <h2 className="text-lg font-extrabold text-on-surface dark:text-white">My Posted Travel Packages</h2>
-        {loadingMy ? (
-          <div className="text-sm text-on-surface-variant dark:text-white/80">Loading...</div>
-        ) : myPackages.length === 0 ? (
-          <div className="text-sm text-on-surface-variant dark:text-white/80">No packages posted yet.</div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {myPackages.map((p) => (
-              <div key={p.package_id} className="border border-outline-variant/10 rounded-2xl p-4 bg-surface-container-low">
-                <div className="font-black text-on-surface">{p.title}</div>
-                <div className="text-xs text-on-surface-variant dark:text-white/80">{p.origin ? `${p.origin} → ` : ''}{p.destination}</div>
-                <div className="text-sm text-primary font-black mt-2">৳{p.price}</div>
-                <div className="text-xs text-on-surface-variant dark:text-white/80">Status: {p.status}</div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+    <div className="space-y-6">
+      {/* Nested Routes */}
+      <Routes>
+        <Route index element={<Navigate to="profile" replace />} />
+        <Route
+          path="profile"
+          element={
+            <AgencyProfile
+              profile={profile}
+              setProfile={setProfile}
+              onUpdateProfile={onUpdateProfile}
+              error={error}
+              success={success}
+            />
+          }
+        />
+        <Route
+          path="post"
+          element={
+            <AgencyPostPackage
+              pkgForm={pkgForm}
+              setPkgForm={setPkgForm}
+              onPostPackage={onPostPackage}
+              posting={posting}
+              error={error}
+              success={success}
+            />
+          }
+        />
+        <Route
+          path="requests"
+          element={
+            <AgencyCustomRequests
+              availableRequests={availableRequests}
+              loadingReq={loadingReq}
+              onBid={onBid}
+              error={error}
+              success={success}
+            />
+          }
+        />
+        <Route
+          path="packages"
+          element={
+            <AgencyMyPackages
+              myPackages={myPackages}
+              loadingMy={loadingMy}
+              editingId={editingId}
+              editForm={editForm}
+              setEditForm={setEditForm}
+              startEdit={startEdit}
+              cancelEdit={cancelEdit}
+              saveEdit={saveEdit}
+              error={error}
+              success={success}
+            />
+          }
+        />
+      </Routes>
     </div>
   );
 };
