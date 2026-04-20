@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CheckCircle2, XCircle, Shield, AlertCircle, RefreshCw, LogOut } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -7,7 +8,7 @@ const AdminDashboardPage = ({ onLogout }) => {
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState(null);
   const [error, setError] = useState(null);
-  const [expandedId, setExpandedId] = useState(null);
+  const navigate = useNavigate();
 
   const user = useMemo(() => {
     try {
@@ -61,138 +62,121 @@ const AdminDashboardPage = ({ onLogout }) => {
     }
   };
 
-  const toggleDetails = (id) => {
-    setExpandedId(prev => (prev === id ? null : id));
-  };
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-on-surface flex items-center gap-3">
-            <Shield className="text-primary" /> Admin Dashboard
+    <div className="space-y-8 min-h-screen bg-gray-50 dark:bg-slate-950 p-6">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-black text-black dark:text-white flex items-center gap-3">
+            <Shield className="text-blue-600 dark:text-blue-400" /> Admin Dashboard
           </h1>
-          <p className="text-sm text-on-surface-variant">
+          <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
             Approve or reject provider applications.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
             onClick={loadPending}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-surface-container-low border border-outline-variant/10 text-on-surface font-bold hover:bg-surface-container transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 text-black dark:text-white font-bold hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors shadow-sm"
           >
-            <RefreshCw size={18} /> Refresh
+            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} /> Refresh
           </button>
           <button
             onClick={() => onLogout?.()}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-error text-on-error font-bold hover:opacity-90 transition-opacity"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-red-600 text-white font-bold hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
           >
             <LogOut size={18} /> Logout
           </button>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-950 rounded-[2.5rem] border border-outline-variant/10 overflow-hidden shadow-2xl">
-        <div className="px-8 py-5 border-b border-outline-variant/10 bg-surface flex items-center justify-between">
-          <div className="font-extrabold text-on-surface">Pending Approvals</div>
-          <div className="text-xs text-on-surface-variant">Signed in as: {user?.name || 'Admin'}</div>
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-gray-200 dark:border-slate-800 overflow-hidden shadow-xl">
+        <div className="px-8 py-6 border-b border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 flex items-center justify-between">
+          <div className="font-extrabold text-black dark:text-white text-lg">Pending Approvals</div>
+          <div className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">Signed in as: {user?.name || 'Admin'}</div>
         </div>
 
-        <div className="p-6">
+        <div className="p-8">
           {error && (
-            <div className="flex items-center gap-2 p-4 mb-4 bg-error-container text-on-error-container rounded-2xl text-sm">
-              <AlertCircle size={18} /> {error}
+            <div className="flex items-center gap-3 p-4 mb-6 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-2xl text-sm border border-red-200 dark:border-red-800">
+              <AlertCircle size={20} /> {error}
             </div>
           )}
 
-          {loading ? (
-            <div className="space-y-3">
+          {loading && pending.length === 0 ? (
+            <div className="space-y-4">
               {Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="h-14 rounded-2xl bg-surface-container animate-pulse" />
+                <div key={i} className="h-16 rounded-2xl bg-gray-100 dark:bg-slate-800 animate-pulse" />
               ))}
             </div>
           ) : pending.length === 0 ? (
-            <div className="text-sm text-on-surface-variant dark:text-white/80">No pending approvals found.</div>
+            <div className="text-center py-20 bg-gray-50 dark:bg-slate-800/20 rounded-3xl border-2 border-dashed border-gray-200 dark:border-slate-800">
+              <Shield size={48} className="mx-auto text-gray-300 dark:text-slate-700 mb-4" />
+              <div className="text-sm font-bold text-gray-500 dark:text-gray-400">No pending approvals found at the moment.</div>
+            </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto -mx-8 px-8">
+              <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="text-left text-on-surface-variant dark:text-white/80">
-                    <th className="py-3 px-2">Name / Org</th>
-                    <th className="py-3 px-2">Type</th>
-                    <th className="py-3 px-2">Email</th>
-                    <th className="py-3 px-2">License / NID</th>
-                    <th className="py-3 px-2">Address</th>
-                    <th className="py-3 px-2">Website</th>
-                    <th className="py-3 px-2">Actions</th>
-                    <th className="py-3 px-2">Details</th>
+                  <tr className="text-left text-gray-500 dark:text-gray-400">
+                    <th className="pb-4 px-4 font-black uppercase tracking-widest text-[10px]">Name / Org</th>
+                    <th className="pb-4 px-4 font-black uppercase tracking-widest text-[10px]">Type</th>
+                    <th className="pb-4 px-4 font-black uppercase tracking-widest text-[10px]">Contact</th>
+                    <th className="pb-4 px-4 font-black uppercase tracking-widest text-[10px]">License / NID</th>
+                    <th className="pb-4 px-4 font-black uppercase tracking-widest text-[10px]">Actions</th>
+                    <th className="pb-4 px-4 font-black uppercase tracking-widest text-[10px] text-right">Details</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                   {pending.map((p) => {
                     const orgName = p.provider_type === 'HOTEL' ? p.hotel_name : p.agency_name;
                     const typeLabel = p.provider_type;
                     return (
-                      <React.Fragment key={p.user_id}>
-                        <tr className="border-t border-outline-variant/10">
-                          <td className="py-4 px-2">
-                            <div className="font-extrabold text-on-surface dark:text-white">{orgName || p.name}</div>
-                            <div className="text-xs text-on-surface-variant dark:text-white/70">{p.name}</div>
-                          </td>
-                          <td className="py-4 px-2">
-                            <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-black bg-surface-container text-on-surface border border-outline-variant/20">
-                              {typeLabel}
-                            </span>
-                          </td>
-                          <td className="py-4 px-2">
-                            <div className="text-on-surface dark:text-white">{p.email}</div>
-                            <div className="text-xs text-on-surface-variant dark:text-white/70">{p.phone || '—'}</div>
-                          </td>
-                          <td className="py-4 px-2 text-on-surface dark:text-white">{p.trade_license_id || '—'}</td>
-                          <td className="py-4 px-2 text-on-surface dark:text-white">{p.address || '—'}</td>
-                          <td className="py-4 px-2 text-on-surface dark:text-white">{p.website ? (<a className="text-primary underline" href={p.website} target="_blank" rel="noreferrer">{p.website}</a>) : '—'}</td>
-                          <td className="py-4 px-2">
-                            <div className="flex items-center gap-2">
-                              <button
-                                disabled={actingId === p.user_id}
-                                onClick={() => handleAction(p.user_id, 'approve')}
-                                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-green-600 text-white font-black disabled:opacity-50"
-                              >
-                                <CheckCircle2 size={16} /> Approve
-                              </button>
-                              <button
-                                disabled={actingId === p.user_id}
-                                onClick={() => handleAction(p.user_id, 'reject')}
-                                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-red-600 text-white font-black disabled:opacity-50"
-                              >
-                                <XCircle size={16} /> Reject
-                              </button>
-                            </div>
-                          </td>
-                          <td className="py-4 px-2">
+                      <tr key={p.user_id} className="group hover:bg-gray-50 dark:hover:bg-slate-800/40 transition-colors">
+                        <td className="py-5 px-4">
+                          <div className="font-extrabold text-black dark:text-white text-base">{orgName || p.name}</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">{p.name}</div>
+                        </td>
+                        <td className="py-5 px-4">
+                          <span className="inline-flex items-center rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider bg-gray-100 dark:bg-slate-800 text-black dark:text-white border border-gray-200 dark:border-slate-700">
+                            {typeLabel}
+                          </span>
+                        </td>
+                        <td className="py-5 px-4">
+                          <div className="text-black dark:text-white font-bold">{p.email}</div>
+                          <div className="text-xs text-gray-600 dark:text-gray-400 font-medium">{p.phone || '—'}</div>
+                        </td>
+                        <td className="py-5 px-4">
+                          <div className="text-black dark:text-white font-mono text-xs">{p.trade_license_id || '—'}</div>
+                        </td>
+                        <td className="py-5 px-4">
+                          <div className="flex items-center gap-2">
                             <button
-                              onClick={() => toggleDetails(p.user_id)}
-                              className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-surface-container text-on-surface font-black hover:bg-surface-container-high"
+                              disabled={actingId === p.user_id}
+                              onClick={() => handleAction(p.user_id, 'approve')}
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white font-black text-xs disabled:opacity-50 transition-colors shadow-sm"
                             >
-                              {expandedId === p.user_id ? 'Hide' : 'Details'}
+                              <CheckCircle2 size={16} /> Approve
                             </button>
-                          </td>
-                        </tr>
-                        {expandedId === p.user_id && (
-                          <tr className="bg-surface-container/40">
-                            <td colSpan={10} className="py-4 px-4 text-sm text-on-surface-variant">
-                              <div className="grid grid-cols-2 gap-4">
-                                <div><strong>Provider Type:</strong> {p.provider_type}</div>
-                                <div><strong>License / NID:</strong> {p.trade_license_id || '—'}</div>
-                                <div><strong>Agency / Hotel:</strong> {p.agency_name || p.hotel_name || '—'}</div>
-                                <div><strong>Address:</strong> {p.address || '—'}</div>
-                                <div className="col-span-2"><strong>Website:</strong> {p.website ? (<a className="text-primary underline" href={p.website} target="_blank" rel="noreferrer">{p.website}</a>) : '—'}</div>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
+                            <button
+                              disabled={actingId === p.user_id}
+                              onClick={() => handleAction(p.user_id, 'reject')}
+                              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs disabled:opacity-50 transition-colors shadow-sm"
+                            >
+                              <XCircle size={16} /> Reject
+                            </button>
+                          </div>
+                        </td>
+                        <td className="py-5 px-4 text-right">
+                          <button
+                            onClick={() => navigate(`/admin/request/${p.user_id}`)}
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-black dark:text-white font-black text-xs hover:bg-gray-200 dark:hover:bg-slate-700 transition-all border border-gray-200 dark:border-slate-700"
+                          >
+                            Details
+                          </button>
+                        </td>
+                      </tr>
                     );
                   })}
                 </tbody>
