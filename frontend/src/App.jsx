@@ -10,12 +10,13 @@ import InvoicesPage from './pages/Invoices';
 import AgencyDashboard from './pages/AgencyDashboard';
 import HotelDashboard from './pages/HotelDashboard';
 import AdminDashboardPage from './pages/AdminDashboard';
+import AdminRequestDetail from './pages/AdminRequestDetail';
 import PaymentSuccessPage from './pages/PaymentSuccess';
 import PaymentFailedPage from './pages/PaymentFailed';
 import HotelResultsPage from './pages/HotelResults';
 import HotelDetailsPage from './pages/HotelDetails';
 import { api } from './services/api';
-import HotelProfile from './pages/HotelProfile';
+
 
 function App() {
   const [user, setUser] = useState(null);
@@ -27,8 +28,8 @@ function App() {
     if (role === 'admin') return '/admin';
     if (role === 'provider') {
       const pType = (user?.providerType || '').toUpperCase();
-      if (pType === 'AGENCY') return '/provider/agency';
-      if (pType === 'HOTEL') return '/provider/hotel';
+      if (pType === 'AGENCY') return '/provider/agency/profile';
+      if (pType === 'HOTEL') return '/provider/hotel/profile';
       return '/traveler';
     }
     return '/traveler';
@@ -104,9 +105,8 @@ function App() {
 
           {/* Admin */}
           <Route path="/admin" element={<AdminDashboardPage onLogout={handleLogout} />} />
+          <Route path="/admin/request/:userId" element={<AdminRequestDetail />} />
 
-          {/* Hotel profile */}
-          <Route path="/provider/hotel/profile" element={<HotelProfile />} />
 
           {/* Traveler */}
           <Route path="/traveler" element={<Dashboard />} />
@@ -120,8 +120,10 @@ function App() {
           <Route path="/chat/:packageId" element={<ChatPage />} />
 
           {/* Provider */}
-          <Route path="/provider/agency" element={<AgencyDashboard />} />
-          <Route path="/provider/hotel" element={<HotelDashboard />} />
+          <Route path="/provider/agency" element={<Navigate to="/provider/agency/profile" replace />} />
+          <Route path="/provider/agency/*" element={<AgencyDashboard />} />
+          <Route path="/provider/hotel" element={<Navigate to="/provider/hotel/profile" replace />} />
+          <Route path="/provider/hotel/*" element={<HotelDashboard />} />
 
           <Route path="*" element={<Navigate to={defaultPath} replace />} />
         </Routes>
