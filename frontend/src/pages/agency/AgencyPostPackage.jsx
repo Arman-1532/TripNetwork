@@ -65,6 +65,19 @@ const AgencyPostPackage = ({ pkgForm, setPkgForm, onPostPackage, posting, error,
               </select>
             </div>
           </div>
+
+          <div className="space-y-4 pt-4 border-t border-outline-variant/10">
+            <h3 className="text-sm font-bold text-on-surface dark:text-white">Image Section</h3>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Image URL</label>
+              <input
+                placeholder="https://example.com/image.jpg"
+                className="w-full bg-surface-container-low text-on-surface rounded-2xl px-4 py-3 border border-outline-variant/10"
+                value={pkgForm.image_url || ''}
+                onChange={(e) => setPkgForm(p => ({ ...p, image_url: e.target.value }))}
+              />
+            </div>
+          </div>
           <div className="space-y-1">
             <label className="text-xs font-bold text-on-surface-variant dark:text-white">Description</label>
             <textarea

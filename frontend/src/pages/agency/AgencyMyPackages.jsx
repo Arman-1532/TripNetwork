@@ -9,6 +9,7 @@ const AgencyMyPackages = ({
   startEdit,
   cancelEdit,
   saveEdit,
+  onDeletePackage,
   error,
   success,
 }) => {
@@ -71,6 +72,14 @@ const AgencyMyPackages = ({
                         <option value="TRAIN">TRAIN</option>
                       </select>
                     </div>
+                    <div className="space-y-1">
+                      <input
+                        className="w-full bg-white dark:bg-slate-800 rounded-2xl px-4 py-2 text-sm"
+                        value={editForm.image_url || ''}
+                        onChange={(e) => setEditForm(f => ({ ...f, image_url: e.target.value }))}
+                        placeholder="Image URL"
+                      />
+                    </div>
                     <textarea
                       className="w-full bg-white dark:bg-slate-800 rounded-2xl px-4 py-2"
                       value={editForm.description}
@@ -90,18 +99,35 @@ const AgencyMyPackages = ({
                   </div>
                 ) : (
                   <>
-                    <div className="font-black text-on-surface">{p.title}</div>
-                    <div className="text-xs text-on-surface-variant dark:text-white/80">
-                      {p.origin ? `${p.origin} → ` : ''}{p.destination}
+                    <div className="flex gap-4">
+                      {p.image_url && (
+                        <img
+                          src={p.image_url}
+                          alt={p.title}
+                          className="w-20 h-20 object-cover rounded-xl border border-outline-variant/10"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <div className="font-black text-on-surface">{p.title}</div>
+                        <div className="text-xs text-on-surface-variant dark:text-white/80">
+                          {p.origin ? `${p.origin} → ` : ''}{p.destination}
+                        </div>
+                        <div className="text-sm text-primary font-black mt-2">৳{p.price}</div>
+                        <div className="text-xs text-on-surface-variant dark:text-white/80">Status: {p.status}</div>
+                      </div>
                     </div>
-                    <div className="text-sm text-primary font-black mt-2">৳{p.price}</div>
-                    <div className="text-xs text-on-surface-variant dark:text-white/80">Status: {p.status}</div>
                     <div className="mt-3 flex gap-2">
                       <button
                         onClick={() => startEdit(p)}
                         className="px-3 py-2 rounded-xl bg-surface text-on-surface border"
                       >
                         Edit
+                      </button>
+                      <button
+                        onClick={() => onDeletePackage(p.package_id)}
+                        className="px-3 py-2 rounded-xl bg-error-container text-on-error-container border border-error/20"
+                      >
+                        Delete
                       </button>
                     </div>
                   </>

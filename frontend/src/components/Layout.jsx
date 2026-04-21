@@ -1,6 +1,7 @@
 import React from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import AiChatbot from './AiChatbot';
 
 const Layout = ({ user, activeTab, setActiveTab, onLogout, children }) => {
   return (
@@ -46,6 +47,7 @@ const Layout = ({ user, activeTab, setActiveTab, onLogout, children }) => {
           </div>
         </footer>
       </main>
+      <AiChatbot />
     </div>
   );
 };

@@ -34,7 +34,8 @@ const AgencyDashboard = () => {
     origin: '',
     price: '',
     travel_medium: 'BUS',
-    description: ''
+    description: '',
+    image_url: ''
   });
 
   const user = useMemo(() => {
@@ -117,8 +118,11 @@ const AgencyDashboard = () => {
       const body = { ...pkgForm, price: Number(pkgForm.price) };
       const res = await api.__raw.packages.create(body);
       if (res?.data?.success) {
-        setSuccess('Package posted (pending approval)');
-        setPkgForm({ title: '', destination: '', origin: '', price: '', travel_medium: 'BUS', description: '' });
+        setSuccess('Package posted successfully');
+        setPkgForm({
+          title: '', destination: '', origin: '', price: '',
+          travel_medium: 'BUS', description: '', image_url: ''
+        });
         await loadMyPackages();
       } else {
         setError(res?.data?.message || 'Failed to post package');
@@ -157,7 +161,8 @@ const AgencyDashboard = () => {
       origin: pkg.origin || '',
       price: pkg.price || '',
       travel_medium: pkg.travel_medium || 'BUS',
-      description: pkg.description || ''
+      description: pkg.description || '',
+      image_url: pkg.image_url || ''
     });
   };
 
@@ -167,24 +172,36 @@ const AgencyDashboard = () => {
     clearMessages();
     try {
       const payload = {
-        title: editForm.title,
-        destination: editForm.destination,
-        origin: editForm.origin,
-        price: Number(editForm.price),
-        travel_medium: editForm.travel_medium,
-        description: editForm.description
+        ...editForm,
+        price: Number(editForm.price)
       };
-      const res = await api.packages.update(packageId, payload);
-      if (res?.success) {
+      const res = await api.__raw.packages.update(packageId, payload);
+      if (res?.data?.success) {
         setSuccess('Package updated');
         setEditingId(null);
         setEditForm({});
         await loadMyPackages();
       } else {
-        setError(res?.message || 'Failed to update package');
+        setError(res?.data?.message || 'Failed to update package');
       }
     } catch (err) {
       setError(err?.response?.data?.message || 'Failed to update package');
+    }
+  };
+
+  const onDeletePackage = async (packageId) => {
+    if (!window.confirm('Are you sure you want to delete this package?')) return;
+    clearMessages();
+    try {
+      const res = await api.packages.delete(packageId);
+      if (res?.success) {
+        setSuccess('Package deleted successfully');
+        await loadMyPackages();
+      } else {
+        setError(res?.message || 'Failed to delete package');
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to delete package');
     }
   };
 
@@ -242,6 +259,7 @@ const AgencyDashboard = () => {
               startEdit={startEdit}
               cancelEdit={cancelEdit}
               saveEdit={saveEdit}
+              onDeletePackage={onDeletePackage}
               error={error}
               success={success}
             />
