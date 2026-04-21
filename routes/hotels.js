@@ -23,19 +23,19 @@ router.post('/packages', authenticate, authorize('provider'), async (req, res) =
     try {
         const pkg = await Package.create({
             provider_id,
-            package_type:    'HOTEL',
+            package_type: 'HOTEL',
             title,
             description,
             destination,
             price,
             is_limited_time: is_limited_time || false,
-            offer_ends_at:   offer_ends_at || null,
-            status:          'PENDING'
+            offer_ends_at: offer_ends_at || null,
+            status: 'APPROVED'
         });
 
         res.status(201).json({
             success: true,
-            message: 'Hotel package created successfully and is pending approval',
+            message: 'Hotel package created successfully',
             packageId: pkg.package_id
         });
     } catch (error) {
