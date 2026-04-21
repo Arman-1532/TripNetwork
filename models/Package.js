@@ -47,6 +47,9 @@ const Package = sequelize.define('Package', {
         type: DataTypes.ENUM('PENDING', 'APPROVED', 'REJECTED'),
         defaultValue: 'PENDING'
     },
+    image_url: {
+        type: DataTypes.STRING(255)
+    },
     created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW

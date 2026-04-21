@@ -57,6 +57,7 @@ export const api = {
     },
     packages: {
       create: (payload) => rawApiInstance.post('/packages', payload),
+      update: (id, payload) => rawApiInstance.put(`/packages/${id}`, payload),
     },
     hotels: {
       createPackage: (payload) => rawApiInstance.post('/hotels/packages', payload),
@@ -71,6 +72,8 @@ export const api = {
   packages: {
     getAll: () => apiInstance.get('/packages').catch(() => ({ success: false, data: [] })),
     getMyPackages: () => apiInstance.get('/packages/my-packages'),
+    update: (id, payload) => apiInstance.put(`/packages/${id}`, payload),
+    delete: (id) => apiInstance.delete(`/packages/${id}`),
   },
   bookings: {
     getAll: () => apiInstance.get('/bookings').catch(() => ({ success: false, data: [] })),
@@ -108,5 +111,8 @@ export const api = {
   hotels: {
     search: (params) => apiInstance.get('/hotels/search', { params }),
     getById: (packageId) => apiInstance.get(`/hotels/${packageId}`),
+  },
+  ai: {
+    chat: (message, history = []) => apiInstance.post('/ai/chat', { message, history }),
   },
 };

@@ -28,8 +28,8 @@ function App() {
     if (role === 'admin') return '/admin';
     if (role === 'provider') {
       const pType = (user?.providerType || '').toUpperCase();
-      if (pType === 'AGENCY') return '/provider/agency/profile';
-      if (pType === 'HOTEL') return '/provider/hotel/profile';
+      if (pType === 'AGENCY') return '/provider/agency/packages';
+      if (pType === 'HOTEL') return '/provider/hotel/packages';
       return '/traveler';
     }
     return '/traveler';
@@ -120,9 +120,9 @@ function App() {
           <Route path="/chat/:packageId" element={<ChatPage />} />
 
           {/* Provider */}
-          <Route path="/provider/agency" element={<Navigate to="/provider/agency/profile" replace />} />
+          <Route path="/provider/agency" element={<Navigate to="/provider/agency/packages" replace />} />
           <Route path="/provider/agency/*" element={<AgencyDashboard />} />
-          <Route path="/provider/hotel" element={<Navigate to="/provider/hotel/profile" replace />} />
+          <Route path="/provider/hotel" element={<Navigate to="/provider/hotel/packages" replace />} />
           <Route path="/provider/hotel/*" element={<HotelDashboard />} />
 
           <Route path="*" element={<Navigate to={defaultPath} replace />} />

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, LogIn, Sparkles, Plane } from 'lucide-react';
+import { Mail, Lock, LogIn, Sparkles, Plane, Eye, EyeOff } from 'lucide-react';
 import { api } from '../services/api';
 import RegisterPage from './Register';
 
@@ -7,6 +7,7 @@ const LoginPage = ({ onLoginSuccess }) => {
   console.log('LoginPage rendering');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showRegister, setShowRegister] = useState(false);
@@ -17,7 +18,6 @@ const LoginPage = ({ onLoginSuccess }) => {
     setError(null);
     try {
       const res = await api.auth.login(email, password);
-      // axios returns res.data directly because of our interceptor
       if (res?.success && res?.data?.token) {
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('user', JSON.stringify(res.data.user));
@@ -26,20 +26,9 @@ const LoginPage = ({ onLoginSuccess }) => {
         const role = (res.data.user?.role || '').toLowerCase();
         const pType = (res.data.user?.providerType || '').toUpperCase();
 
-        if (role === 'admin') {
-          window.location.assign('/admin');
-          return;
-        }
-
-        if (role === 'provider' && pType === 'AGENCY') {
-          window.location.assign('/provider/agency');
-          return;
-        }
-        if (role === 'provider' && pType === 'HOTEL') {
-          window.location.assign('/provider/hotel');
-          return;
-        }
-
+        if (role === 'admin') { window.location.assign('/admin'); return; }
+        if (role === 'provider' && pType === 'AGENCY') { window.location.assign('/provider/agency/packages'); return; }
+        if (role === 'provider' && pType === 'HOTEL') { window.location.assign('/provider/hotel/packages'); return; }
         window.location.assign('/traveler');
       } else {
         setError(res?.message || 'Authentication failed');
@@ -55,10 +44,7 @@ const LoginPage = ({ onLoginSuccess }) => {
     return (
       <RegisterPage
         onBackToLogin={() => setShowRegister(false)}
-        onRegisterSuccess={() => {
-          // After successful registration, return user to login.
-          setShowRegister(false);
-        }}
+        onRegisterSuccess={() => setShowRegister(false)}
       />
     );
   }
@@ -81,7 +67,7 @@ const LoginPage = ({ onLoginSuccess }) => {
         </div>
 
         {error && (
-          <div className="p-4 bg-error-container/10 border border-error/20 text-error rounded-2xl text-xs font-bold text-center animate-in slide-in-from-top-2">
+          <div className="p-4 bg-error-container/10 border border-error/20 text-error rounded-2xl text-xs font-bold text-center">
             {error}
           </div>
         )}
@@ -93,11 +79,11 @@ const LoginPage = ({ onLoginSuccess }) => {
               <span className="absolute inset-y-0 left-4 flex items-center text-primary">
                 <Mail size={18} />
               </span>
-              <input 
+              <input
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none"
-                placeholder="abc@traveler.com"
+                placeholder="you@example.com"
                 type="email"
                 required
               />
@@ -110,21 +96,28 @@ const LoginPage = ({ onLoginSuccess }) => {
               <span className="absolute inset-y-0 left-4 flex items-center text-primary">
                 <Lock size={18} />
               </span>
-              <input 
+              <input
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none"
+                className="w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-10 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none"
                 placeholder="••••••••"
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-4 flex items-center text-on-surface-variant hover:text-on-surface transition-colors"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 
-          <button 
+          <button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary text-white py-4 rounded-full font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 group mt-4 h-14"
+            className="w-full bg-primary text-white py-4 rounded-full font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 group mt-4 h-14 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
           >
             {loading ? (
               <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

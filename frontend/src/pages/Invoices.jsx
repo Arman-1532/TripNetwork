@@ -60,9 +60,9 @@ const InvoicesPage = () => {
       ) : bookings.length === 0 ? (
         <div className="text-sm text-on-surface-variant">No invoices found.</div>
       ) : (
-        <div className="overflow-x-auto bg-white dark:bg-slate-900 border border-outline-variant/10 rounded-3xl">
-          <table className="min-w-full text-sm">
-            <thead className="bg-surface-container-low">
+        <div className="overflow-x-auto bg-surface-container border border-outline-variant/10 rounded-3xl">
+          <table className="min-w-full text-sm text-on-surface">
+            <thead className="bg-surface-container-low text-on-surface">
               <tr className="text-left">
                 <th className="p-4">Booking</th>
                 <th className="p-4">Type</th>
@@ -73,7 +73,7 @@ const InvoicesPage = () => {
             </thead>
             <tbody>
               {bookings.map((b) => (
-                <tr key={b.booking_id} className="border-t border-outline-variant/10">
+                <tr key={b.booking_id} className="border-t border-outline-variant/10 hover:bg-surface-container-high transition-colors text-on-surface">
                   <td className="p-4">#{b.booking_id}</td>
                   <td className="p-4">{b.booking_type}</td>
                   <td className="p-4">৳{b.total_price}</td>

@@ -134,7 +134,7 @@ const RegisterPage = ({ onRegisterSuccess, onBackToLogin }) => {
         )}
 
         {(isAgency || isHotel) && (
-          <div className="p-4 bg-amber-100 dark:bg-amber-900/30 border border-amber-400 rounded-2xl text-xs font-bold text-amber-900 dark:text-amber-100">
+          <div className="p-4 bg-primary-container/20 dark:bg-primary-container/30 border border-primary-container text-on-surface dark:text-white rounded-2xl text-xs font-bold">
             Note: Providers require admin approval before they can login.
           </div>
         )}
