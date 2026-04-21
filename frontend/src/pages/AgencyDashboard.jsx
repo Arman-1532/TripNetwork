@@ -166,10 +166,21 @@ const AgencyDashboard = () => {
     });
   };
 
+<<<<<<< Updated upstream
   const cancelEdit = () => { setEditingId(null); setEditForm({}); };
 
   const saveEdit = async (packageId) => {
     clearMessages();
+=======
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
+  };
+
+  const saveEdit = async (packageId) => {
+    setError(null);
+    setSuccess(null);
+>>>>>>> Stashed changes
     try {
       const payload = {
         ...editForm,
@@ -206,6 +217,7 @@ const AgencyDashboard = () => {
   };
 
   return (
+<<<<<<< Updated upstream
     <div className="space-y-6">
       {/* Nested Routes */}
       <Routes>
@@ -266,6 +278,166 @@ const AgencyDashboard = () => {
           }
         />
       </Routes>
+=======
+    <div className="space-y-10">
+      <div>
+        <h1 className="text-2xl font-black text-on-surface">Agency Dashboard</h1>
+        <p className="text-sm text-on-surface-variant dark:text-white/80">Manage your travel packages</p>
+      </div>
+
+      {error && <div className="p-3 rounded-2xl bg-error-container text-on-error-container text-sm">{error}</div>}
+      {success && <div className="p-3 rounded-2xl bg-primary-container/30 text-on-primary-container text-sm font-medium">{success}</div>}
+
+      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-outline-variant/10 p-6 space-y-4">
+        <h2 className="text-lg font-extrabold text-on-surface dark:text-white">Agency Information</h2>
+        <form onSubmit={onUpdateProfile} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Agency Name</label>
+              <input className="w-full bg-surface-container-low text-on-surface rounded-2xl px-4 py-3 border border-outline-variant/10" value={profile.agencyName} onChange={(e) => setProfile(p => ({ ...p, agencyName: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Contact Name</label>
+              <input required className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={profile.name} onChange={(e) => setProfile(p => ({ ...p, name: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Phone</label>
+              <input className="w-full bg-surface-container-low text-on-surface rounded-2xl px-4 py-3 border border-outline-variant/10" value={profile.phone} onChange={(e) => setProfile(p => ({ ...p, phone: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Trade License ID</label>
+              <input className="w-full bg-surface-container-low text-on-surface rounded-2xl px-4 py-3 border border-outline-variant/10" value={profile.tradeLicenseId} onChange={(e) => setProfile(p => ({ ...p, tradeLicenseId: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Website</label>
+              <input type="url" className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={profile.website} onChange={(e) => setProfile(p => ({ ...p, website: e.target.value }))} />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-on-surface-variant dark:text-white">Address</label>
+            <textarea className="w-full bg-surface-container-low text-on-surface rounded-2xl px-4 py-3 border border-outline-variant/10 min-h-24" value={profile.address} onChange={(e) => setProfile(p => ({ ...p, address: e.target.value }))} />
+          </div>
+
+          <button className="bg-primary text-on-primary font-bold px-6 py-3 rounded-2xl">Update Agency Info</button>
+        </form>
+      </section>
+
+      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-outline-variant/10 p-6 space-y-4">
+        <h2 className="text-lg font-extrabold text-on-surface dark:text-white">Post New Travel Package</h2>
+        <form onSubmit={onPostPackage} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Package Title</label>
+              <input required className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={pkgForm.title} onChange={(e) => setPkgForm(p => ({ ...p, title: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Destination</label>
+              <input required className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={pkgForm.destination} onChange={(e) => setPkgForm(p => ({ ...p, destination: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Origin</label>
+              <input className="w-full bg-surface-container-low text-on-surface rounded-2xl px-4 py-3 border border-outline-variant/10" value={pkgForm.origin} onChange={(e) => setPkgForm(p => ({ ...p, origin: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Price (BDT)</label>
+              <input required type="number" min="0" className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={pkgForm.price} onChange={(e) => setPkgForm(p => ({ ...p, price: e.target.value }))} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Travel Medium</label>
+              <select className="w-full bg-surface-container-low text-on-surface rounded-2xl px-4 py-3 border border-outline-variant/10" value={pkgForm.travel_medium} onChange={(e) => setPkgForm(p => ({ ...p, travel_medium: e.target.value }))}>
+                <option value="BUS">BUS</option>
+                <option value="AIR">AIR</option>
+                <option value="TRAIN">TRAIN</option>
+              </select>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-on-surface-variant dark:text-white">Description</label>
+            <textarea className="w-full bg-surface-container-low text-on-surface rounded-2xl px-4 py-3 border border-outline-variant/10 min-h-24" value={pkgForm.description} onChange={(e) => setPkgForm(p => ({ ...p, description: e.target.value }))} />
+          </div>
+
+          <button disabled={posting} className="bg-primary text-on-primary font-bold px-6 py-3 rounded-2xl disabled:opacity-50">
+            {posting ? 'Posting...' : 'Post Package'}
+          </button>
+        </form>
+      </section>
+
+      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-outline-variant/10 p-6 space-y-4">
+        <h2 className="text-lg font-extrabold text-on-surface dark:text-white">Available Custom Trip Requests</h2>
+        {loadingReq ? (
+          <div className="text-sm text-on-surface-variant dark:text-white/80">Fetching requests...</div>
+        ) : availableRequests.length === 0 ? (
+          <div className="text-sm text-on-surface-variant dark:text-white/80">No custom trip requests available right now.</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {availableRequests.map((r) => {
+              let meta = {};
+              try { meta = JSON.parse(r.description); } catch {}
+              return (
+                <div key={r.package_id} className="border border-outline-variant/10 rounded-2xl p-4 bg-surface-container-low">
+                  <div className="font-black text-on-surface">{r.title}</div>
+                  <div className="text-xs text-on-surface-variant dark:text-white/80">Requested by: {r.traveler_name || 'Traveler'}</div>
+                  <div className="text-sm text-on-surface-variant dark:text-white/80 mt-2">
+                    <div><b>Budget:</b> ৳{meta.budget ?? 'N/A'}</div>
+                    <div><b>People:</b> {meta.numPeople ?? 'N/A'}</div>
+                    <div><b>Date:</b> {meta.departureDate ?? 'Anytime'}</div>
+                  </div>
+                  <button onClick={() => onBid(r)} className="mt-3 bg-primary text-on-primary px-4 py-2 rounded-xl font-bold text-sm">Submit Quote</button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-outline-variant/10 p-6 space-y-4">
+        <h2 className="text-lg font-extrabold text-on-surface dark:text-white">My Posted Travel Packages</h2>
+        {loadingMy ? (
+          <div className="text-sm text-on-surface-variant dark:text-white/80">Loading...</div>
+        ) : myPackages.length === 0 ? (
+          <div className="text-sm text-on-surface-variant dark:text-white/80">No packages posted yet.</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {myPackages.map((p) => (
+              <div key={p.package_id} className="border border-outline-variant/10 rounded-2xl p-4 bg-surface-container-low">
+                {editingId === p.package_id ? (
+                  <div className="space-y-3">
+                    <input className="w-full bg-white dark:bg-slate-800 rounded-2xl px-4 py-2" value={editForm.title} onChange={(e) => setEditForm(f => ({ ...f, title: e.target.value }))} />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input className="w-full bg-white dark:bg-slate-800 rounded-2xl px-4 py-2" value={editForm.origin} onChange={(e) => setEditForm(f => ({ ...f, origin: e.target.value }))} placeholder="Origin" />
+                      <input className="w-full bg-white dark:bg-slate-800 rounded-2xl px-4 py-2" value={editForm.destination} onChange={(e) => setEditForm(f => ({ ...f, destination: e.target.value }))} placeholder="Destination" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <input type="number" className="w-full bg-white dark:bg-slate-800 rounded-2xl px-4 py-2" value={editForm.price} onChange={(e) => setEditForm(f => ({ ...f, price: e.target.value }))} placeholder="Price" />
+                      <select className="w-full bg-white dark:bg-slate-800 rounded-2xl px-4 py-2" value={editForm.travel_medium} onChange={(e) => setEditForm(f => ({ ...f, travel_medium: e.target.value }))}>
+                        <option value="BUS">BUS</option>
+                        <option value="AIR">AIR</option>
+                        <option value="TRAIN">TRAIN</option>
+                      </select>
+                    </div>
+                    <textarea className="w-full bg-white dark:bg-slate-800 rounded-2xl px-4 py-2" value={editForm.description} onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value }))} />
+                    <div className="flex gap-2">
+                      <button onClick={() => saveEdit(p.package_id)} className="bg-primary text-on-primary px-4 py-2 rounded-xl font-bold">Save</button>
+                      <button onClick={cancelEdit} className="px-4 py-2 rounded-xl bg-surface">Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="font-black text-on-surface">{p.title}</div>
+                    <div className="text-xs text-on-surface-variant dark:text-white/80">{p.origin ? `${p.origin} → ` : ''}{p.destination}</div>
+                    <div className="text-sm text-primary font-black mt-2">৳{p.price}</div>
+                    <div className="text-xs text-on-surface-variant dark:text-white/80">Status: {p.status}</div>
+                    <div className="mt-3 flex gap-2">
+                      <button onClick={() => startEdit(p)} className="px-3 py-2 rounded-xl bg-surface text-on-surface border">Edit</button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+>>>>>>> Stashed changes
     </div>
   );
 };

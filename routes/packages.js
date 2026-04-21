@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const { Package, Provider, Agency, Hotel } = require('../models/index');
 const { authenticate, authorize } = require('../middleware/auth');
-const path = require('path');
 
 // Hide sensitive fields stored in custom-request JSON metadata when returning public curated packages.
 function sanitizeCustomRequestDescription(description) {
@@ -41,13 +40,13 @@ router.post('/', authenticate, authorize('provider'), async (req, res) => {
         });
     }
 
-    const { title, description, destination, origin, travel_medium, price, is_limited_time, offer_ends_at, image_url } = req.body;
+    const { title, description, destination, origin, travel_medium, price, is_limited_time, offer_ends_at } = req.body;
     const provider_id = req.user.id;
 
     try {
         const pkg = await Package.create({
             provider_id,
-            package_type: 'TRAVEL',
+            package_type:    'TRAVEL',
             title,
             description,
             destination,
@@ -55,14 +54,13 @@ router.post('/', authenticate, authorize('provider'), async (req, res) => {
             travel_medium,
             price,
             is_limited_time: is_limited_time || false,
-            offer_ends_at: offer_ends_at || null,
-            status: 'APPROVED',
-            image_url
+            offer_ends_at:   offer_ends_at || null,
+            status:          'PENDING'
         });
 
         res.status(201).json({
             success: true,
-            message: 'Travel package created successfully',
+            message: 'Travel package created successfully and is pending approval',
             packageId: pkg.package_id
         });
     } catch (error) {
@@ -90,7 +88,7 @@ router.get('/', async (req, res) => {
                     as: 'provider',
                     include: [
                         { model: Agency, as: 'agency' },
-                        { model: Hotel, as: 'hotel' }
+                        { model: Hotel,  as: 'hotel'  }
                     ]
                 }
             ],
@@ -101,7 +99,7 @@ router.get('/', async (req, res) => {
         const data = rows.map(p => {
             const plain = p.toJSON();
             plain.agency_name = plain.provider && plain.provider.agency ? plain.provider.agency.agency_name : null;
-            plain.hotel_name = plain.provider && plain.provider.hotel ? plain.provider.hotel.hotel_name : null;
+            plain.hotel_name  = plain.provider && plain.provider.hotel  ? plain.provider.hotel.hotel_name   : null;
             delete plain.provider;
 
             // Prevent leaking custom-request bidding metadata on the public packages feed.
@@ -184,14 +182,14 @@ router.put('/:id', authenticate, authorize('provider'), async (req, res) => {
         }
 
         // Only allow updating of a safe set of fields
-        const allowed = ['title', 'description', 'destination', 'origin', 'price', 'travel_medium', 'is_limited_time', 'offer_ends_at', 'image_url'];
+        const allowed = [ 'title', 'description', 'destination', 'origin', 'price', 'travel_medium', 'is_limited_time', 'offer_ends_at' ];
         const updates = {};
         for (const key of allowed) {
             if (Object.prototype.hasOwnProperty.call(req.body, key)) updates[key] = req.body[key];
         }
 
-        // When a provider edits a package, it remains approved (no manual review required anymore)
-        // if (pkg.status === 'APPROVED') updates.status = 'PENDING';
+        // When a provider edits a previously approved package, reflag for approval
+        if (pkg.status === 'APPROVED') updates.status = 'PENDING';
 
         await Package.update(updates, { where: { package_id: packageId } });
 
@@ -199,34 +197,6 @@ router.put('/:id', authenticate, authorize('provider'), async (req, res) => {
     } catch (error) {
         console.error('Error updating package:', error);
         res.status(500).json({ success: false, message: 'Failed to update package', error: error.message });
-    }
-});
-
-/**
- * @route   DELETE /api/packages/:id
- * @desc    Delete a package (provider owner only)
- * @access  Provider
- */
-router.delete('/:id', authenticate, authorize('provider'), async (req, res) => {
-    const packageId = req.params.id;
-    const provider_id = req.user.id;
-
-    try {
-        const pkg = await Package.findOne({ where: { package_id: packageId } });
-        if (!pkg) {
-            return res.status(404).json({ success: false, message: 'Package not found' });
-        }
-
-        if (pkg.provider_id !== provider_id) {
-            return res.status(403).json({ success: false, message: 'Access denied. You do not own this package.' });
-        }
-
-        await Package.destroy({ where: { package_id: packageId } });
-
-        res.json({ success: true, message: 'Package deleted successfully' });
-    } catch (error) {
-        console.error('Error deleting package:', error);
-        res.status(500).json({ success: false, message: 'Failed to delete package', error: error.message });
     }
 });
 
