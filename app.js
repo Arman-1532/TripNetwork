@@ -68,6 +68,7 @@ var hotelsRouter = require('./routes/hotels');
 var bookingsRouter = require('./routes/bookings');
 var customRequestsRouter = require('./routes/customRequests');
 var chatRouter = require('./routes/chat');
+var aiRouter = require('./routes/aiRoutes');
 
 
 var app = express();
@@ -86,6 +87,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 const frontendDistPath = path.join(__dirname, 'frontend', 'dist');
 app.use(express.static(frontendDistPath));
 
+// Serve uploads
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+
 // Routes
 app.use('/', indexRouter);
 app.use('/api/users', usersRouter);
@@ -98,6 +102,7 @@ app.use('/api/hotels', hotelsRouter);
 app.use('/api/bookings', bookingsRouter);
 app.use('/api/custom-requests', customRequestsRouter);
 app.use('/api/chat', chatRouter);
+app.use('/api/ai', aiRouter);
 
 // SPA fallback: return frontend index.html for non-API GET routes
 app.get('*', (req, res, next) => {
