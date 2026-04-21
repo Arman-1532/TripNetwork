@@ -162,4 +162,42 @@ router.get('/my-packages', authenticate, authorize('provider'), async (req, res)
     }
 });
 
+/**
+ * @route   PUT /api/packages/:id
+ * @desc    Update a package (provider owner only)
+ * @access  Provider
+ */
+router.put('/:id', authenticate, authorize('provider'), async (req, res) => {
+    const packageId = req.params.id;
+    const provider_id = req.user.id;
+
+    try {
+        const pkg = await Package.findOne({ where: { package_id: packageId } });
+        if (!pkg) {
+            return res.status(404).json({ success: false, message: 'Package not found' });
+        }
+
+        if (pkg.provider_id !== provider_id) {
+            return res.status(403).json({ success: false, message: 'Access denied. You do not own this package.' });
+        }
+
+        // Only allow updating of a safe set of fields
+        const allowed = [ 'title', 'description', 'destination', 'origin', 'price', 'travel_medium', 'is_limited_time', 'offer_ends_at' ];
+        const updates = {};
+        for (const key of allowed) {
+            if (Object.prototype.hasOwnProperty.call(req.body, key)) updates[key] = req.body[key];
+        }
+
+        // When a provider edits a previously approved package, reflag for approval
+        if (pkg.status === 'APPROVED') updates.status = 'PENDING';
+
+        await Package.update(updates, { where: { package_id: packageId } });
+
+        res.json({ success: true, message: 'Package updated successfully' });
+    } catch (error) {
+        console.error('Error updating package:', error);
+        res.status(500).json({ success: false, message: 'Failed to update package', error: error.message });
+    }
+});
+
 module.exports = router;
