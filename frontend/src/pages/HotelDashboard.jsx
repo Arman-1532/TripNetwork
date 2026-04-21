@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { api } from '../services/api';
-import { useNavigate } from 'react-router-dom';
 
 const HotelDashboard = () => {
   const [profile, setProfile] = useState({
@@ -18,6 +17,8 @@ const HotelDashboard = () => {
   const [success, setSuccess] = useState(null);
 
   const [myPackages, setMyPackages] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({});
   const [loadingMy, setLoadingMy] = useState(true);
 
   const user = useMemo(() => {
@@ -61,19 +62,44 @@ const HotelDashboard = () => {
     loadMyPackages();
   }, []);
 
-  const navigate = useNavigate();
+  const startEdit = (pkg) => {
+    setEditingId(pkg.package_id);
+    setEditForm({
+      title: pkg.title || '',
+      destination: pkg.destination || '',
+      price: pkg.price || '',
+      description: pkg.description || ''
+    });
+  };
 
-  const [offering, setOffering] = useState({
-    country: '',
-    city: '',
-    area: '',
-    fullAddress: '',
-    roomType: 'Single',
-    price: '',
-    bedType: '',
-    fullDescription: '',
-    shortTitle: ''
-  });
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
+  };
+
+  const saveEdit = async (packageId) => {
+    setError(null);
+    setSuccess(null);
+    try {
+      const payload = {
+        title: editForm.title,
+        destination: editForm.destination,
+        price: Number(editForm.price),
+        description: editForm.description
+      };
+      const res = await api.packages.update(packageId, payload);
+      if (res?.success) {
+        setSuccess('Package updated');
+        setEditingId(null);
+        setEditForm({});
+        await loadMyPackages();
+      } else {
+        setError(res?.message || 'Failed to update package');
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to update package');
+    }
+  };
 
   const onPostOffering = async (e) => {
     e.preventDefault();
@@ -198,10 +224,30 @@ const HotelDashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {myPackages.map((p) => (
               <div key={p.package_id} className="border border-outline-variant/10 rounded-2xl p-4 bg-surface-container-low">
-                <div className="font-black text-on-surface dark:text-white">{p.title}</div>
-                <div className="text-xs text-on-surface-variant dark:text-white/80">{p.destination}</div>
-                <div className="text-sm text-primary font-black mt-2">৳{p.price}</div>
-                <div className="text-xs text-on-surface-variant dark:text-white/80">Status: {p.status}</div>
+                {editingId === p.package_id ? (
+                  <div className="space-y-3">
+                    <input className="w-full bg-white dark:bg-slate-800 rounded-2xl px-4 py-2" value={editForm.title} onChange={(e) => setEditForm(f => ({ ...f, title: e.target.value }))} />
+                    <input className="w-full bg-white dark:bg-slate-800 rounded-2xl px-4 py-2" value={editForm.destination} onChange={(e) => setEditForm(f => ({ ...f, destination: e.target.value }))} />
+                    <div className="grid grid-cols-2 gap-2">
+                      <input type="number" className="w-full bg-white dark:bg-slate-800 rounded-2xl px-4 py-2" value={editForm.price} onChange={(e) => setEditForm(f => ({ ...f, price: e.target.value }))} />
+                    </div>
+                    <textarea className="w-full bg-white dark:bg-slate-800 rounded-2xl px-4 py-2" value={editForm.description} onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value }))} />
+                    <div className="flex gap-2">
+                      <button onClick={() => saveEdit(p.package_id)} className="bg-primary text-on-primary px-4 py-2 rounded-xl font-bold">Save</button>
+                      <button onClick={cancelEdit} className="px-4 py-2 rounded-xl bg-surface">Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="font-black text-on-surface">{p.title}</div>
+                    <div className="text-xs text-on-surface-variant dark:text-white/80">{p.destination}</div>
+                    <div className="text-sm text-primary font-black mt-2">৳{p.price}</div>
+                    <div className="text-xs text-on-surface-variant dark:text-white/80">Status: {p.status}</div>
+                    <div className="mt-3 flex gap-2">
+                      <button onClick={() => startEdit(p)} className="px-3 py-2 rounded-xl bg-surface text-on-surface border">Edit</button>
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
