@@ -71,6 +71,7 @@ export const api = {
   packages: {
     getAll: () => apiInstance.get('/packages').catch(() => ({ success: false, data: [] })),
     getMyPackages: () => apiInstance.get('/packages/my-packages'),
+    update: (id, payload) => apiInstance.put(`/packages/${id}`, payload),
   },
   bookings: {
     getAll: () => apiInstance.get('/bookings').catch(() => ({ success: false, data: [] })),
