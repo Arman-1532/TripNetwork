@@ -5,7 +5,7 @@ const AgencyPostPackage = ({ pkgForm, setPkgForm, onPostPackage, posting, error,
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-black text-on-surface">Post Package</h1>
-        <p className="text-sm text-on-surface-variant dark:text-black/80">Create a new travel package for travelers</p>
+        <p className="text-sm text-on-surface-variant dark:text-on-surface-variant">Create a new travel package for travelers</p>
       </div>
 
       {error && <div className="p-3 rounded-2xl bg-error-container text-on-error-container text-sm">{error}</div>}
