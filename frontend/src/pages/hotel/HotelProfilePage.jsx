@@ -5,7 +5,7 @@ const HotelProfilePage = ({ profile, setProfile, onUpdateProfile, posting, error
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-black text-on-surface">Hotel Profile</h1>
-        <p className="text-sm text-on-surface-variant dark:text-black/80">View and update your hotel profile information</p>
+        <p className="text-sm text-on-surface-variant dark:text-on-surface-variant">View and update your hotel profile information</p>
       </div>
 
       {error && <div className="p-3 rounded-2xl bg-error-container text-on-error-container text-sm">{error}</div>}

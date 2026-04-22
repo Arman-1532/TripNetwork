@@ -5,7 +5,7 @@ const HotelPostOffering = ({ offering, setOffering, onPostOffering, posting, err
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-black text-on-surface">Post Offering</h1>
-        <p className="text-sm text-on-surface-variant dark:text-black/80">Create a new hotel room offering</p>
+        <p className="text-sm text-on-surface-variant dark:text-on-surface-variant">Create a new hotel room offering</p>
       </div>
 
       {error && <div className="p-3 rounded-2xl bg-error-container text-on-error-container text-sm">{error}</div>}

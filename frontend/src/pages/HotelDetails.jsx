@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../services/api';
 import useBookAndPay from '../hooks/useBookAndPay';
+import TravelerDetailsModal from '../components/TravelerDetailsModal';
 
 export default function HotelDetails() {
   const { id } = useParams();
@@ -9,6 +10,8 @@ export default function HotelDetails() {
   const [hotel, setHotel] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showTravelerModal, setShowTravelerModal] = useState(false);
+  const [travelerLoading, setTravelerLoading] = useState(false);
 
   const { bookAndPay, loading: booking, error: bookError } = useBookAndPay();
 
@@ -38,14 +41,32 @@ export default function HotelDetails() {
     }
   }, [hotel]);
 
-  const onBook = async () => {
+  const onBook = () => {
     if (!hotel) return;
-    await bookAndPay({
-      booking_type: 'PACKAGE',
-      package_id: hotel.package_id,
-      num_people: 1,
-      total_price: Number(hotel.price) || 0,
-    });
+    setShowTravelerModal(true);
+  };
+
+  const handleTravelerDetailsSubmit = async (travelers) => {
+    setTravelerLoading(true);
+    try {
+      const totalPrice = Number(hotel.price) * travelers.length;
+      await bookAndPay({
+        booking_type: 'PACKAGE',
+        package_id: hotel.package_id,
+        travelers: travelers,
+        num_people: travelers.length,
+        total_price: totalPrice,
+      });
+      setShowTravelerModal(false);
+    } catch (err) {
+      console.error('Booking failed:', err);
+    } finally {
+      setTravelerLoading(false);
+    }
+  };
+
+  const handleCloseTravelerModal = () => {
+    setShowTravelerModal(false);
   };
 
   if (loading) return <div className="text-sm text-on-surface-variant">Loading...</div>;
@@ -100,7 +121,18 @@ export default function HotelDetails() {
           {booking ? 'Processing...' : 'Book & Pay'}
         </button>
       </div>
+
+      {/* Traveler Details Modal */}
+      {showTravelerModal && hotel && (
+        <TravelerDetailsModal
+          item={hotel}
+          itemType="HOTEL"
+          numTravelers={1}
+          onConfirm={handleTravelerDetailsSubmit}
+          onCancel={handleCloseTravelerModal}
+          loading={travelerLoading}
+        />
+      )}
     </div>
   );
 }
-
