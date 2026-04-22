@@ -37,9 +37,15 @@ const AdminDashboardPage = ({ onLogout }) => {
   };
 
   useEffect(() => {
-    loadPending();
+    // Role safeguard: Only fetch if the user is an admin
+    const role = (user?.role || '').toLowerCase();
+    if (role === 'admin') {
+      loadPending();
+    } else {
+      console.warn('⚠️ AdminDashboardPage mounted by non-admin user. Skipping fetch.');
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   const handleAction = async (id, action) => {
     try {

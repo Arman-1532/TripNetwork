@@ -5,7 +5,7 @@ const AgencyCustomRequests = ({ availableRequests, loadingReq, onBid, error, suc
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-black text-on-surface">Custom Requests</h1>
-        <p className="text-sm text-on-surface-variant dark:text-black/80">Browse and bid on traveler custom trip requests</p>
+        <p className="text-sm text-on-surface-variant dark:text-on-surface-variant">Browse and bid on traveler custom trip requests</p>
       </div>
 
       {error && <div className="p-3 rounded-2xl bg-error-container text-on-error-container text-sm">{error}</div>}
