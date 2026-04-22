@@ -27,6 +27,12 @@ const { sequelize } = require('./models/index');
 sequelize.authenticate()
   .then(async () => {
     console.log('✅ Database connected successfully (Sequelize)');
+    
+    // Sync models with database schema (Development only)
+    if (process.env.NODE_ENV === 'development') {
+      await sequelize.sync({ alter: true });
+      console.log('✅ Models synced with database schema');
+    }
 
     // Ensure there's an admin user available for development/testing
     try {
@@ -69,6 +75,8 @@ var bookingsRouter = require('./routes/bookings');
 var customRequestsRouter = require('./routes/customRequests');
 var chatRouter = require('./routes/chat');
 var aiRouter = require('./routes/aiRoutes');
+var recommendationRouter = require('./routes/recommendationRoutes');
+var notificationsRouter = require('./routes/notifications');
 
 
 var app = express();
@@ -103,6 +111,8 @@ app.use('/api/bookings', bookingsRouter);
 app.use('/api/custom-requests', customRequestsRouter);
 app.use('/api/chat', chatRouter);
 app.use('/api/ai', aiRouter);
+app.use('/api/recommendations', recommendationRouter);
+app.use('/api/notifications', notificationsRouter);
 
 // SPA fallback: return frontend index.html for non-API GET routes
 app.get('*', (req, res, next) => {

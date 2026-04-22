@@ -15,6 +15,8 @@ import PaymentSuccessPage from './pages/PaymentSuccess';
 import PaymentFailedPage from './pages/PaymentFailed';
 import HotelResultsPage from './pages/HotelResults';
 import HotelDetailsPage from './pages/HotelDetails';
+import PackageDetailsPage from './pages/PackageDetails';
+import ProtectedRoute from './components/ProtectedRoute';
 import { api } from './services/api';
 
 
@@ -104,14 +106,29 @@ function App() {
           <Route path="/" element={<Navigate to={defaultPath} replace />} />
 
           {/* Admin */}
-          <Route path="/admin" element={<AdminDashboardPage onLogout={handleLogout} />} />
-          <Route path="/admin/request/:userId" element={<AdminRequestDetail />} />
+          <Route 
+            path="/admin" 
+            element={
+              <ProtectedRoute user={user} allowedRoles={['admin']}>
+                <AdminDashboardPage onLogout={handleLogout} />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/admin/request/:userId" 
+            element={
+              <ProtectedRoute user={user} allowedRoles={['admin']}>
+                <AdminRequestDetail />
+              </ProtectedRoute>
+            } 
+          />
 
 
           {/* Traveler */}
           <Route path="/traveler" element={<Dashboard />} />
           <Route path="/hotels" element={<HotelResultsPage />} />
           <Route path="/hotels/:id" element={<HotelDetailsPage />} />
+          <Route path="/packages/:id" element={<PackageDetailsPage />} />
           <Route path="/custom-request" element={<CustomRequestPage />} />
           <Route path="/invoices" element={<InvoicesPage />} />
           <Route path="/payment/success" element={<PaymentSuccessPage />} />

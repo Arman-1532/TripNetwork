@@ -8,7 +8,10 @@ const PackageCard = ({ pkg, onBook }) => {
   const isHotel = pkg.package_type === 'HOTEL';
 
   return (
-    <div className="group relative rounded-[2rem] overflow-hidden bg-white dark:bg-slate-900 border border-outline-variant/10 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 cursor-pointer">
+    <div 
+      onClick={() => navigate(`/packages/${pkg.package_id}`)}
+      className="group relative rounded-[2rem] overflow-hidden bg-white dark:bg-slate-900 border border-outline-variant/10 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 cursor-pointer"
+    >
       {pkg.image_url && (
         <div className="h-48 overflow-hidden relative">
           <img
@@ -39,7 +42,19 @@ const PackageCard = ({ pkg, onBook }) => {
         </div>
 
         <p className="text-sm text-on-surface-variant line-clamp-2 leading-relaxed h-10">
-          {pkg.description || 'No description available for this curated package.'}
+          {(() => {
+            if (!pkg.description) return 'No description available for this curated package.';
+            try {
+              const parsed = JSON.parse(pkg.description);
+              // If it's JSON, it might be a custom request or metadata - don't show the raw JSON
+              if (parsed && typeof parsed === 'object') {
+                return parsed.fullDescription || parsed.message || 'Details provided by agency.';
+              }
+            } catch (e) {
+              // Not JSON, just regular text
+            }
+            return pkg.description;
+          })()}
         </p>
 
         <div className="flex justify-between items-center pt-2 border-t border-outline-variant/5">
@@ -49,14 +64,7 @@ const PackageCard = ({ pkg, onBook }) => {
           </div>
           <div className="flex gap-2">
             <button
-              onClick={(e) => { e.stopPropagation(); navigate(`/chat/${pkg.package_id}`); }}
-              className="p-3 bg-surface-container hover:bg-tertiary hover:text-white rounded-2xl transition-all"
-              title="Chat about this package"
-            >
-              <MessageSquare size={20} />
-            </button>
-            <button
-              onClick={() => onBook(pkg)}
+              onClick={(e) => { e.stopPropagation(); navigate(`/packages/${pkg.package_id}`); }}
               className="p-3 bg-surface-container hover:bg-primary hover:text-white rounded-2xl transition-all"
             >
               <ArrowRight size={20} />
