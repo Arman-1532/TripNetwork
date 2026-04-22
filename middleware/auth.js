@@ -109,10 +109,19 @@ const authorize = (...allowedRoles) => {
     }
 
     const userRole = req.user.role ? req.user.role.toLowerCase() : '';
-    const isAllowed = allowedRoles.some(role => role.toLowerCase() === userRole);
+    const normalizedAllowedRoles = allowedRoles.map(role => role.toLowerCase());
+    const isAllowed = normalizedAllowedRoles.includes(userRole);
+
+    console.log(`🔐 Authorization Check:`, {
+      userEmail: req.user.email,
+      userRole: req.user.role,
+      userRoleLowercase: userRole,
+      allowedRoles: normalizedAllowedRoles,
+      isAllowed
+    });
 
     if (!isAllowed) {
-      console.warn(`🚫 Access Denied: User role '${userRole}' not in allowed roles: [${allowedRoles}]`);
+      console.warn(`🚫 Access Denied: User role '${userRole}' not in allowed roles: [${normalizedAllowedRoles}]`);
       return res.status(403).json({
         success: false,
         message: 'Access denied. Insufficient permissions.'
