@@ -14,7 +14,7 @@ const HotelSearch = ({ onSearch }) => {
   return (
     <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-outline-variant/10 shadow-sm">
       <div className="space-y-2">
-        <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant pl-4">Destination City</label>
+        <label className="text-xs font-bold uppercase tracking-widest text-sky-700 dark:text-sky-300 pl-4">Destination City</label>
         <div className="relative">
           <span className="absolute inset-y-0 left-4 flex items-center text-primary">
             <MapPin size={18} />
@@ -30,7 +30,7 @@ const HotelSearch = ({ onSearch }) => {
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant pl-4">Room Type</label>
+        <label className="text-xs font-bold uppercase tracking-widest text-violet-700 dark:text-violet-300 pl-4">Room Type</label>
         <div className="relative">
           <span className="absolute inset-y-0 left-4 flex items-center text-primary">
             <Bed size={18} />
@@ -51,7 +51,7 @@ const HotelSearch = ({ onSearch }) => {
       </div>
 
       <div className="space-y-2">
-        <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant pl-4">Max Budget</label>
+        <label className="text-xs font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-300 pl-4">Max Budget</label>
         <div className="relative">
           <span className="absolute inset-y-0 left-4 flex items-center text-primary">
             <Banknote size={18} />

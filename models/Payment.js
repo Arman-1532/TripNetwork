@@ -20,7 +20,8 @@ const Payment = sequelize.define('Payment', {
         allowNull: false
     },
     payment_method: {
-        type: DataTypes.ENUM('BKASH', 'NAGAD', 'UPAY'),
+        // Unified flow initializes payments through SSLCommerz.
+        type: DataTypes.ENUM('BKASH', 'NAGAD', 'UPAY', 'SSLCOMMERZ'),
         allowNull: false
     },
     transaction_id: {

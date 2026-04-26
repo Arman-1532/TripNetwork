@@ -8,9 +8,9 @@ const router = express.Router();
 const adminController = require('../controllers/adminController');
 const { authenticate, authorize } = require('../middleware/auth');
 
-// All routes require authentication and 'admin' role
+// All routes require authentication and 'ADMIN' role
 router.use(authenticate);
-router.use(authorize('admin'));
+router.use(authorize('ADMIN'));
 
 /**
  * @route   GET /api/admin/pending-providers
@@ -39,6 +39,28 @@ router.put('/providers/:id/reject', adminController.rejectProvider);
  * @access  Admin
  */
 router.get('/users', adminController.getAllUsers);
+
+/**
+ * @route   GET /api/admin/users/search
+ * @desc    Search user by email
+ * @access  Admin
+ * NOTE: This route MUST come before /:id routes to avoid being matched as an ID parameter
+ */
+router.get('/users/search', adminController.searchUserByEmail);
+
+/**
+ * @route   PUT /api/admin/users/:id/block
+ * @desc    Block a user from the system
+ * @access  Admin
+ */
+router.put('/users/:id/block', adminController.blockUser);
+
+/**
+ * @route   PUT /api/admin/users/:id/unblock
+ * @desc    Unblock a user (restore access)
+ * @access  Admin
+ */
+router.put('/users/:id/unblock', adminController.unblockUser);
 
 /**
  * @route   DELETE /api/admin/users/:id

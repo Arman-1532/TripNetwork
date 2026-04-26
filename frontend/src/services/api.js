@@ -57,6 +57,7 @@ export const api = {
     },
     packages: {
       create: (payload) => rawApiInstance.post('/packages', payload),
+      update: (id, payload) => rawApiInstance.put(`/packages/${id}`, payload),
     },
     hotels: {
       createPackage: (payload) => rawApiInstance.post('/hotels/packages', payload),
@@ -70,12 +71,18 @@ export const api = {
   },
   packages: {
     getAll: () => apiInstance.get('/packages').catch(() => ({ success: false, data: [] })),
+    getById: (id) => apiInstance.get(`/packages/${id}`),
     getMyPackages: () => apiInstance.get('/packages/my-packages'),
     update: (id, payload) => apiInstance.put(`/packages/${id}`, payload),
+    delete: (id) => apiInstance.delete(`/packages/${id}`),
+    getReviews: (id) => apiInstance.get(`/packages/${id}/reviews`),
+    addReview: (id, payload) => apiInstance.post(`/packages/${id}/reviews`, payload),
+    canReview: (id) => apiInstance.get(`/packages/${id}/can-review`),
   },
   bookings: {
     getAll: () => apiInstance.get('/bookings').catch(() => ({ success: false, data: [] })),
     create: (bookingData) => apiInstance.post('/bookings', bookingData),
+    requestRefund: (id) => apiInstance.post(`/bookings/${id}/refund`),
   },
   payment: {
     init: (bookingId) => apiInstance.post('/payment/init', { bookingId }),
@@ -94,20 +101,72 @@ export const api = {
     getAvailable: () => apiInstance.get('/custom-requests/available'),
     bid: (requestId, data) => apiInstance.post(`/custom-requests/${requestId}/bid`, data),
     acceptBid: (requestId, data) => apiInstance.post(`/custom-requests/${requestId}/accept-bid`, data),
+    rejectBid: (requestId, data) => apiInstance.post(`/custom-requests/${requestId}/reject-bid`, data),
     acknowledgeBid: (requestId) => apiInstance.post(`/custom-requests/${requestId}/acknowledge-bid`),
   },
   chat: {
     rooms: () => apiInstance.get('/chat/rooms'),
   },
   admin: {
-    pendingProviders: () => apiInstance.get('/admin/pending-providers'),
-    approveProvider: (id) => apiInstance.put(`/admin/providers/${id}/approve`),
-    rejectProvider: (id) => apiInstance.put(`/admin/providers/${id}/reject`),
-    getUsers: () => apiInstance.get('/admin/users'),
-    deleteUser: (id) => apiInstance.delete(`/admin/users/${id}`),
+    pendingProviders: () => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.role?.toLowerCase() !== 'admin') return Promise.resolve({ success: false, message: 'Unauthorized' });
+      return apiInstance.get('/admin/pending-providers');
+    },
+    approveProvider: (id) => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.role?.toLowerCase() !== 'admin') return Promise.reject(new Error('Unauthorized'));
+      return apiInstance.put(`/admin/providers/${id}/approve`);
+    },
+    rejectProvider: (id) => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.role?.toLowerCase() !== 'admin') return Promise.reject(new Error('Unauthorized'));
+      return apiInstance.put(`/admin/providers/${id}/reject`);
+    },
+    getUsers: () => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.role?.toLowerCase() !== 'admin') return Promise.resolve({ success: false, data: [] });
+      return apiInstance.get('/admin/users');
+    },
+    searchUserByEmail: (email) => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.role?.toLowerCase() !== 'admin') return Promise.reject(new Error('Unauthorized'));
+      return apiInstance.get('/admin/users/search', { params: { email } });
+    },
+    blockUser: (id) => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.role?.toLowerCase() !== 'admin') return Promise.reject(new Error('Unauthorized'));
+      return apiInstance.put(`/admin/users/${id}/block`);
+    },
+    unblockUser: (id) => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.role?.toLowerCase() !== 'admin') return Promise.reject(new Error('Unauthorized'));
+      return apiInstance.put(`/admin/users/${id}/unblock`);
+    },
+    deleteUser: (id) => {
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      if (user.role?.toLowerCase() !== 'admin') return Promise.reject(new Error('Unauthorized'));
+      return apiInstance.delete(`/admin/users/${id}`);
+    },
   },
   hotels: {
     search: (params) => apiInstance.get('/hotels/search', { params }),
     getById: (packageId) => apiInstance.get(`/hotels/${packageId}`),
+    getReviews: (packageId) => apiInstance.get(`/hotels/${packageId}/reviews`),
+    addReview: (packageId, payload) => apiInstance.post(`/hotels/${packageId}/reviews`, payload),
+    canReview: (packageId) => apiInstance.get(`/hotels/${packageId}/can-review`),
+  },
+  ai: {
+    chat: (message, history = []) => apiInstance.post('/ai/chat', { message, history }),
+  },
+  recommendations: {
+    get: () => apiInstance.get('/recommendations').catch(() => ({ success: false, data: { recommendations: [], insight: null } })),
+  },
+  notifications: {
+    getAll: () => apiInstance.get('/notifications'),
+    getUnreadCount: () => apiInstance.get('/notifications/unread/count'),
+    markAsRead: (notificationId) => apiInstance.put(`/notifications/${notificationId}/mark-read`),
+    markAllAsRead: () => apiInstance.put('/notifications/mark-all-read'),
+    getDetails: (notificationId) => apiInstance.get(`/notifications/${notificationId}`),
   },
 };

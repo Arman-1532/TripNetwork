@@ -107,9 +107,11 @@ const PassengerDetailsModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-primary to-primary-dim p-6 text-white rounded-t-3xl flex items-center justify-between">
+      {/* Modal shell: flex-col, fixed height, no overflow on shell */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full flex flex-col" style={{ maxHeight: '90vh' }}>
+
+        {/* ── FIXED HEADER ───────────────────────────────────────── */}
+        <div className="shrink-0 bg-gradient-to-r from-primary to-primary-dim p-6 text-white rounded-t-3xl flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-black">Passenger Details</h2>
             <p className="text-white/80 text-sm">Complete your booking information</p>
@@ -123,36 +125,40 @@ const PassengerDetailsModal = ({
           </button>
         </div>
 
-        {/* Flight Summary */}
-        <div className="bg-primary/5 dark:bg-primary/10 border-b border-outline-variant/10 p-6">
+        {/* ── FIXED FLIGHT SUMMARY ────────────────────────────────── */}
+        <div className="shrink-0 bg-primary/5 dark:bg-primary/10 border-b border-outline-variant/10 p-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <p className="text-xs text-on-surface-variant uppercase font-bold">From</p>
-              <p className="text-xl font-black text-on-surface mt-1">{from}</p>
+              <p className="text-white text-on-surface-variant uppercase font-bold">From</p>
+              <p className="text-white font-black text-on-surface mt-1">{from}</p>
             </div>
             <div>
-              <p className="text-xs text-on-surface-variant uppercase font-bold">To</p>
-              <p className="text-xl font-black text-on-surface mt-1">{to}</p>
+              <p className="text-white text-on-surface-variant uppercase font-bold">To</p>
+              <p className="text-white font-black text-on-surface mt-1">{to}</p>
             </div>
             <div>
-              <p className="text-xs text-on-surface-variant uppercase font-bold">Departure</p>
-              <p className="text-sm font-bold text-on-surface mt-1">
+              <p className="text-white text-on-surface-variant uppercase font-bold">Departure</p>
+              <p className="text-white font-bold text-on-surface mt-1">
                 {dep ? new Date(dep).toLocaleDateString() : '—'}
               </p>
             </div>
             <div>
-              <p className="text-xs text-on-surface-variant uppercase font-bold">Price per Person</p>
-              <p className="text-xl font-black text-primary mt-1">
+              <p className="text-white text-on-surface-variant uppercase font-bold">Price per Person</p>
+              <p className="text-white font-black text-primary mt-1">
                 {unitPrice} {currency}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Passenger Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Tabs for multiple passengers with +/- buttons */}
+        {/* ── SCROLLABLE FORM BODY ────────────────────────────────── */}
+        <form
+          id="passenger-form"
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto p-6 space-y-6"
+        >
           <div className="space-y-4">
+            {/* Passenger tabs + add/remove controls */}
             <div className="flex gap-2 border-b border-outline-variant/10 items-center justify-between">
               <div className="flex gap-2 flex-wrap">
                 {passengers.map((_, idx) => (
@@ -160,11 +166,10 @@ const PassengerDetailsModal = ({
                     key={idx}
                     type="button"
                     onClick={() => setActiveTab(idx)}
-                    className={`px-4 py-3 font-bold text-sm transition-colors border-b-2 -mb-[1px] ${
-                      activeTab === idx
-                        ? 'text-primary border-primary'
-                        : 'text-on-surface-variant border-transparent hover:text-on-surface'
-                    }`}
+                    className={`px-4 py-3 font-bold text-sm transition-colors border-b-2 -mb-[1px] ${activeTab === idx
+                      ? 'text-primary border-primary'
+                      : 'text-on-surface-variant border-transparent hover:text-on-surface'
+                      }`}
                   >
                     Passenger {idx + 1}
                   </button>
@@ -191,7 +196,7 @@ const PassengerDetailsModal = ({
               </div>
             </div>
 
-            {/* Current passenger form */}
+            {/* Active passenger fields */}
             {passengers.map((passenger, idx) => (
               activeTab === idx && (
                 <div key={idx} className="space-y-4 animate-in fade-in duration-200">
@@ -208,10 +213,9 @@ const PassengerDetailsModal = ({
                         type="text"
                         value={passenger.fullName}
                         onChange={(e) => handlePassengerChange(idx, 'fullName', e.target.value)}
-                        placeholder="John Doe"
-                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${
-                          errors[`${idx}-fullName`] ? 'ring-2 ring-error' : ''
-                        }`}
+                        placeholder="Arman"
+                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${errors[`${idx}-fullName`] ? 'ring-2 ring-error' : ''
+                          }`}
                       />
                     </div>
                     {errors[`${idx}-fullName`] && (
@@ -233,9 +237,8 @@ const PassengerDetailsModal = ({
                         value={passenger.passportNumber}
                         onChange={(e) => handlePassengerChange(idx, 'passportNumber', e.target.value)}
                         placeholder="AB123456789"
-                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${
-                          errors[`${idx}-passportNumber`] ? 'ring-2 ring-error' : ''
-                        }`}
+                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${errors[`${idx}-passportNumber`] ? 'ring-2 ring-error' : ''
+                          }`}
                       />
                     </div>
                     {errors[`${idx}-passportNumber`] && (
@@ -257,9 +260,8 @@ const PassengerDetailsModal = ({
                         value={passenger.nidNumber}
                         onChange={(e) => handlePassengerChange(idx, 'nidNumber', e.target.value)}
                         placeholder="1234567890123456"
-                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${
-                          errors[`${idx}-nidNumber`] ? 'ring-2 ring-error' : ''
-                        }`}
+                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${errors[`${idx}-nidNumber`] ? 'ring-2 ring-error' : ''
+                          }`}
                       />
                     </div>
                     {errors[`${idx}-nidNumber`] && (
@@ -281,9 +283,8 @@ const PassengerDetailsModal = ({
                         value={passenger.phoneNumber}
                         onChange={(e) => handlePassengerChange(idx, 'phoneNumber', e.target.value)}
                         placeholder="+1234567890"
-                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${
-                          errors[`${idx}-phoneNumber`] ? 'ring-2 ring-error' : ''
-                        }`}
+                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${errors[`${idx}-phoneNumber`] ? 'ring-2 ring-error' : ''
+                          }`}
                       />
                     </div>
                     {errors[`${idx}-phoneNumber`] && (
@@ -304,10 +305,9 @@ const PassengerDetailsModal = ({
                         type="email"
                         value={passenger.email}
                         onChange={(e) => handlePassengerChange(idx, 'email', e.target.value)}
-                        placeholder="john@example.com"
-                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${
-                          errors[`${idx}-email`] ? 'ring-2 ring-error' : ''
-                        }`}
+                        placeholder="arman@gmail.com"
+                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${errors[`${idx}-email`] ? 'ring-2 ring-error' : ''
+                          }`}
                       />
                     </div>
                     {errors[`${idx}-email`] && (
@@ -318,25 +318,28 @@ const PassengerDetailsModal = ({
               )
             ))}
           </div>
+        </form>
 
+        {/* ── STICKY FOOTER: Price Summary + Actions ──────────────── */}
+        <div className="shrink-0 bg-white dark:bg-slate-900 border-t border-outline-variant/10 p-6 space-y-4 rounded-b-3xl">
           {/* Price Summary */}
           <div className="bg-primary/10 dark:bg-primary/20 border border-primary/30 rounded-2xl p-4 space-y-2">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-bold text-on-surface">Number of Passengers:</span>
+              <span className="text-white font-bold text-on-surface">Number of Passengers:</span>
               <span className="text-xl font-black text-primary">{passengers.length}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm font-bold text-on-surface">Price per Passenger:</span>
-              <span className="text-lg font-black text-on-surface">{unitPrice} {currency}</span>
+              <span className="text-white font-bold text-on-surface">Price per Passenger:</span>
+              <span className="text-white font-black text-on-surface">{unitPrice} {currency}</span>
             </div>
             <div className="border-t border-primary/30 pt-2 flex justify-between items-center">
-              <span className="text-sm font-bold text-on-surface">Total Price:</span>
+              <span className="text-white font-bold text-on-surface">Total Price:</span>
               <span className="text-2xl font-black text-primary">{totalPrice} {currency}</span>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4 border-t border-outline-variant/10">
+          {/* Action Buttons — submit targets the form by id */}
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={onCancel}
@@ -347,6 +350,7 @@ const PassengerDetailsModal = ({
             </button>
             <button
               type="submit"
+              form="passenger-form"
               disabled={loading}
               className="flex-1 bg-primary text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
@@ -360,7 +364,8 @@ const PassengerDetailsModal = ({
               )}
             </button>
           </div>
-        </form>
+        </div>
+
       </div>
     </div>
   );

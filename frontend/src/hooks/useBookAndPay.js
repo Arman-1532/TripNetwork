@@ -15,21 +15,29 @@ export default function useBookAndPay() {
     try {
       const bookingRes = await api.bookings.create(bookingPayload);
       if (!bookingRes?.success || !bookingRes?.data?.bookingId) {
-        throw new Error(bookingRes?.message || 'Failed to create booking');
+        const msg = bookingRes?.message || 'Failed to create booking';
+        setError(msg);
+        return Promise.reject(new Error(msg));
       }
 
       const bookingId = bookingRes.data.bookingId;
 
       const payRes = await api.payment.init(bookingId);
       if (!payRes?.success || !payRes?.url) {
-        throw new Error(payRes?.message || 'Failed to initiate payment');
+        const msg = payRes?.message || 'Failed to initiate payment';
+        setError(msg);
+        return Promise.reject(new Error(msg));
       }
 
-      // Redirect to SSLCommerz hosted gateway
+      // Redirect to payment gateway in the SAME tab.
       window.location.assign(payRes.url);
+
       return { bookingId };
     } catch (e) {
-      setError(e?.response?.data?.message || e?.message || 'Booking/payment failed');
+      // Prefer detailed server message if available
+      const serverMsg = e?.response?.data?.message || e?.message || 'Booking/payment failed';
+      setError(serverMsg);
+      // Re-throw so callers can react if needed
       throw e;
     } finally {
       setLoading(false);
@@ -38,4 +46,3 @@ export default function useBookAndPay() {
 
   return { bookAndPay, loading, error };
 }
-

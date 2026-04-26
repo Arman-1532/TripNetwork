@@ -35,7 +35,11 @@ const AgencyDashboard = () => {
     price: '',
     travel_medium: 'BUS',
     description: '',
-    image_url: ''
+    image_url: '',
+    is_limited_time: false,
+    duration_value: '',
+    duration_unit: 'hours',
+    offer_ends_at: ''
   });
 
   const user = useMemo(() => {
@@ -77,7 +81,21 @@ const AgencyDashboard = () => {
     setLoadingMy(true);
     try {
       const res = await api.packages.getMyPackages();
-      if (res?.success) setMyPackages(res.data || []);
+      if (res?.success) {
+        const payload = res.data;
+        const normalizedPackages = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload?.packages)
+            ? payload.packages
+            : Array.isArray(payload?.data)
+              ? payload.data
+              : [];
+        setMyPackages(normalizedPackages);
+      } else {
+        setMyPackages([]);
+      }
+    } catch {
+      setMyPackages([]);
     } finally {
       setLoadingMy(false);
     }
@@ -115,13 +133,23 @@ const AgencyDashboard = () => {
     setPosting(true);
     clearMessages();
     try {
-      const body = { ...pkgForm, price: Number(pkgForm.price) };
+      const body = {
+        ...pkgForm,
+        price: Number(pkgForm.price),
+        is_limited_time: !!pkgForm.is_limited_time
+      };
+      if (!body.is_limited_time) {
+        body.duration_value = '';
+        body.duration_unit = 'hours';
+      }
       const res = await api.__raw.packages.create(body);
       if (res?.data?.success) {
         setSuccess('Package posted successfully');
         setPkgForm({
           title: '', destination: '', origin: '', price: '',
-          travel_medium: 'BUS', description: '', image_url: ''
+          travel_medium: 'BUS', description: '', image_url: '',
+          is_limited_time: false, duration_value: '', duration_unit: 'hours',
+          offer_ends_at: ''
         });
         await loadMyPackages();
       } else {
@@ -134,11 +162,10 @@ const AgencyDashboard = () => {
     }
   };
 
-  const onBid = async (reqPkg) => {
-    const amount = window.prompt('Enter quote amount (BDT)');
+  const onBid = async (reqPkg, bidData) => {
+    const amount  = bidData?.amount  ?? Number(window.prompt('Enter quote amount (BDT)'));
+    const message = bidData?.message ?? window.prompt('Enter offer details');
     if (!amount) return;
-    const message = window.prompt('Enter offer details');
-    if (!message) return;
     clearMessages();
     try {
       const res = await api.customRequests.bid(reqPkg.package_id, { amount: Number(amount), message });

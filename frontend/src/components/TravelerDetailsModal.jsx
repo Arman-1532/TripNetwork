@@ -99,9 +99,11 @@ const TravelerDetailsModal = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-primary to-primary-dim p-6 text-white rounded-t-3xl flex items-center justify-between">
+      {/* Modal shell: flex-col, fixed height */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-2xl w-full flex flex-col" style={{ maxHeight: '90vh' }}>
+
+        {/* ── FIXED HEADER ───────────────────────────────────────── */}
+        <div className="shrink-0 bg-gradient-to-r from-primary to-primary-dim p-6 text-white rounded-t-3xl flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-black">Traveler Details</h2>
             <p className="text-white/80 text-sm">Complete your booking information</p>
@@ -115,32 +117,36 @@ const TravelerDetailsModal = ({
           </button>
         </div>
 
-        {/* Booking Summary */}
-        <div className="bg-primary/5 dark:bg-primary/10 border-b border-outline-variant/10 p-6">
+        {/* ── FIXED BOOKING SUMMARY ───────────────────────────────── */}
+        <div className="shrink-0 bg-primary/5 dark:bg-primary/10 border-b border-outline-variant/10 p-6">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div>
-              <p className="text-xs text-on-surface-variant uppercase font-bold">Destination</p>
-              <p className="text-lg font-black text-on-surface mt-1">{item?.destination || 'Destination'}</p>
+              <p className="text-white text-on-surface-variant uppercase font-bold">Destination</p>
+              <p className="text-white font-black text-on-surface mt-1">{item?.destination || 'Destination'}</p>
             </div>
             <div>
-              <p className="text-xs text-on-surface-variant uppercase font-bold">Unit Price</p>
-              <p className="text-lg font-black text-primary mt-1">
+              <p className="text-white text-on-surface-variant uppercase font-bold">Unit Price</p>
+              <p className="text-white font-black text-primary mt-1">
                 ৳{unitPrice}
               </p>
             </div>
             <div>
-              <p className="text-xs text-on-surface-variant uppercase font-bold">Total Price</p>
-              <p className="text-lg font-black text-primary mt-1">
+              <p className="text-white text-on-surface-variant uppercase font-bold">Total Price</p>
+              <p className="text-white font-black text-primary mt-1">
                 ৳{totalPrice}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Traveler Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Tabs for multiple travelers with +/- buttons */}
+        {/* ── SCROLLABLE FORM BODY ────────────────────────────────── */}
+        <form
+          id="traveler-form"
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto p-6 space-y-6"
+        >
           <div className="space-y-4">
+            {/* Traveler tabs + add/remove controls */}
             <div className="flex gap-2 border-b border-outline-variant/10 items-center justify-between">
               <div className="flex gap-2 flex-wrap">
                 {travelers.map((_, idx) => (
@@ -148,11 +154,10 @@ const TravelerDetailsModal = ({
                     key={idx}
                     type="button"
                     onClick={() => setActiveTab(idx)}
-                    className={`px-4 py-3 font-bold text-sm transition-colors border-b-2 -mb-[1px] ${
-                      activeTab === idx
+                    className={`px-4 py-3 font-bold text-sm transition-colors border-b-2 -mb-[1px] ${activeTab === idx
                         ? 'text-primary border-primary'
                         : 'text-on-surface-variant border-transparent hover:text-on-surface'
-                    }`}
+                      }`}
                   >
                     Traveler {idx + 1}
                   </button>
@@ -179,7 +184,7 @@ const TravelerDetailsModal = ({
               </div>
             </div>
 
-            {/* Current traveler form */}
+            {/* Active traveler fields */}
             {travelers.map((traveler, idx) => (
               activeTab === idx && (
                 <div key={idx} className="space-y-4 animate-in fade-in duration-200">
@@ -196,10 +201,9 @@ const TravelerDetailsModal = ({
                         type="text"
                         value={traveler.fullName}
                         onChange={(e) => handleTravelerChange(idx, 'fullName', e.target.value)}
-                        placeholder="John Doe"
-                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${
-                          errors[`${idx}-fullName`] ? 'ring-2 ring-error' : ''
-                        }`}
+                        placeholder="Arman"
+                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${errors[`${idx}-fullName`] ? 'ring-2 ring-error' : ''
+                          }`}
                       />
                     </div>
                     {errors[`${idx}-fullName`] && (
@@ -221,9 +225,8 @@ const TravelerDetailsModal = ({
                         value={traveler.nidNumber}
                         onChange={(e) => handleTravelerChange(idx, 'nidNumber', e.target.value)}
                         placeholder="1234567890123456"
-                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${
-                          errors[`${idx}-nidNumber`] ? 'ring-2 ring-error' : ''
-                        }`}
+                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${errors[`${idx}-nidNumber`] ? 'ring-2 ring-error' : ''
+                          }`}
                       />
                     </div>
                     {errors[`${idx}-nidNumber`] && (
@@ -264,9 +267,8 @@ const TravelerDetailsModal = ({
                         value={traveler.phoneNumber}
                         onChange={(e) => handleTravelerChange(idx, 'phoneNumber', e.target.value)}
                         placeholder="+1234567890"
-                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${
-                          errors[`${idx}-phoneNumber`] ? 'ring-2 ring-error' : ''
-                        }`}
+                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${errors[`${idx}-phoneNumber`] ? 'ring-2 ring-error' : ''
+                          }`}
                       />
                     </div>
                     {errors[`${idx}-phoneNumber`] && (
@@ -287,10 +289,9 @@ const TravelerDetailsModal = ({
                         type="email"
                         value={traveler.email}
                         onChange={(e) => handleTravelerChange(idx, 'email', e.target.value)}
-                        placeholder="john@example.com"
-                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${
-                          errors[`${idx}-email`] ? 'ring-2 ring-error' : ''
-                        }`}
+                        placeholder="arman@gmail.com"
+                        className={`w-full bg-white dark:bg-slate-800 text-on-surface dark:text-white placeholder:text-on-surface-variant dark:placeholder:text-white/60 border-none rounded-2xl py-4 pl-12 pr-4 focus:ring-2 focus:ring-primary/20 transition-all text-sm outline-none ${errors[`${idx}-email`] ? 'ring-2 ring-error' : ''
+                          }`}
                       />
                     </div>
                     {errors[`${idx}-email`] && (
@@ -301,9 +302,11 @@ const TravelerDetailsModal = ({
               )
             ))}
           </div>
+        </form>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-6 border-t border-outline-variant/10">
+        {/* ── STICKY FOOTER: Action Buttons ───────────────────────── */}
+        <div className="shrink-0 bg-white dark:bg-slate-900 border-t border-outline-variant/10 p-6 rounded-b-3xl">
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={onCancel}
@@ -314,13 +317,15 @@ const TravelerDetailsModal = ({
             </button>
             <button
               type="submit"
+              form="traveler-form"
               disabled={loading}
               className="flex-1 py-4 rounded-2xl bg-primary text-on-primary font-bold transition-all hover:bg-primary-hover shadow-lg shadow-primary/20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Processing...' : 'Proceed to Payment'}
             </button>
           </div>
-        </form>
+        </div>
+
       </div>
     </div>
   );
