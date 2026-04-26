@@ -10,22 +10,28 @@ import TravelerDetailsModal from '../components/TravelerDetailsModal';
 
 /* ─── Status badge helper ───────────────────────────────────────────────────── */
 const statusStyles = {
-  PENDING:  'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700/40',
+  PENDING: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700/40',
   APPROVED: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-700/40',
   REJECTED: 'bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-700/40',
+};
+
+const formatBdt = (value) => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '—';
+  return n.toLocaleString('en-BD', { maximumFractionDigits: 2 });
 };
 
 /* ─── Bid Card ──────────────────────────────────────────────────────────────── */
 const BidCard = ({ bid, requestId, requestStatus, onAccept, onReject, accepting, rejecting }) => {
   const isAccepted = bid.status === 'ACCEPTED' || requestStatus === 'ACCEPTED';
   const isRejected = bid.status === 'REJECTED';
-  const isActing   = accepting === bid.agencyId || rejecting === bid.agencyId;
+  const isActing = accepting === bid.agencyId || rejecting === bid.agencyId;
 
   return (
     <div className={`rounded-2xl border p-4 space-y-3 transition-all
       ${isAccepted ? 'border-green-300 bg-green-50 dark:bg-green-900/10 dark:border-green-700/40' :
         isRejected ? 'border-slate-200 bg-slate-50 dark:bg-slate-800/50 dark:border-slate-700 opacity-60' :
-        'border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 hover:shadow-md'}`}
+          'border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 hover:shadow-md'}`}
     >
       {/* Agency header */}
       <div className="flex items-start justify-between gap-3">
@@ -57,7 +63,7 @@ const BidCard = ({ bid, requestId, requestStatus, onAccept, onReject, accepting,
         <DollarSign size={16} className="text-primary shrink-0" />
         <div>
           <p className="text-[10px] font-black uppercase tracking-wider text-primary/70">Quoted Price</p>
-          <p className="text-xl font-black text-primary">৳{bid.amount}</p>
+          <p className="text-xl font-black text-primary">৳{formatBdt(bid.amount)}</p>
         </div>
       </div>
 
@@ -105,10 +111,10 @@ const RequestCard = ({ r, onAccept, onReject, accepting, rejecting }) => {
   let meta = {};
   try { meta = JSON.parse(r.description); } catch { /* plain text */ }
 
-  const bids        = Array.isArray(meta.bids) ? meta.bids : [];
-  const activeBids  = bids.filter(b => b.status !== 'REJECTED');
-  const hasBids     = activeBids.length > 0;
-  const isAccepted  = r.status === 'APPROVED';
+  const bids = Array.isArray(meta.bids) ? meta.bids : [];
+  const activeBids = bids.filter(b => b.status !== 'REJECTED');
+  const hasBids = activeBids.length > 0;
+  const isAccepted = r.status === 'APPROVED';
 
   return (
     <div className={`rounded-[2rem] overflow-hidden border transition-all duration-300
@@ -213,21 +219,21 @@ const RequestCard = ({ r, onAccept, onReject, accepting, rejecting }) => {
 
 /* ─── Main Page ─────────────────────────────────────────────────────────────── */
 const CustomRequestPage = () => {
-  const [destination, setDestination]   = useState('');
-  const [budget, setBudget]             = useState('');
-  const [numPeople, setNumPeople]       = useState(1);
+  const [destination, setDestination] = useState('');
+  const [budget, setBudget] = useState('');
+  const [numPeople, setNumPeople] = useState(1);
   const [departureDate, setDepartureDate] = useState('');
-  const [description, setDescription]  = useState('');
+  const [description, setDescription] = useState('');
 
-  const [myRequests, setMyRequests]     = useState([]);
-  const [loading, setLoading]           = useState(false);
-  const [error, setError]               = useState(null);
-  const [success, setSuccess]           = useState(null);
+  const [myRequests, setMyRequests] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
 
   // Bid accept/reject state
-  const [accepting, setAccepting]       = useState(null); // agencyId being accepted
-  const [rejecting, setRejecting]       = useState(null); // agencyId being rejected
-  const [bidError, setBidError]         = useState(null);
+  const [accepting, setAccepting] = useState(null); // agencyId being accepted
+  const [rejecting, setRejecting] = useState(null); // agencyId being rejected
+  const [bidError, setBidError] = useState(null);
 
   // Traveler details modal (shown before payment after accepting a bid)
   const [pendingAccept, setPendingAccept] = useState(null); // { requestId, agencyId, amount, numPeople }
@@ -414,7 +420,7 @@ const CustomRequestPage = () => {
               </div>
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black uppercase tracking-[0.18em] text-white pl-1">Budget (BDT)</label>
+              <label className="text-[10px] font-black uppercase tracking-[0.18em] text-white pl-1">Budget(per person)</label>
               <div className="relative">
                 <DollarSign size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary" />
                 <input

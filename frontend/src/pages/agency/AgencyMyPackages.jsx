@@ -243,13 +243,7 @@ const PackageManageCard = ({ p, editingId, editForm, setEditForm, startEdit, can
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/5 to-transparent pointer-events-none" />
 
-          {/* Status badge */}
-          <div className="absolute top-3 left-3">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${status.color}`}>
-              <span className="w-1.5 h-1.5 rounded-full bg-current" />
-              {status.label}
-            </span>
-          </div>
+          {/* Status badge removed as requested */}
 
           {/* Transport badge */}
           {transport && (

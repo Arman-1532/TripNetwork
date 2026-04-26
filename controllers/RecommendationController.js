@@ -18,18 +18,25 @@ function activeLimitedTimeFilter(now = new Date()) {
  */
 exports.getPersonalizedRecommendations = async (req, res) => {
   try {
+    if (!req.user || !req.user.id) {
+      return res.json({ success: true, data: { recommendations: [], insight: null } });
+    }
+
     const travelerId = req.user.id; // From authenticate middleware
 
     // 1. Fetch User Booking History
     const bookings = await Booking.findAll({
       where: { traveler_id: travelerId, booking_type: 'PACKAGE' },
       include: [{ model: Package, as: 'package' }]
+    }).catch(err => {
+      console.error('Booking fetch failed:', err.message);
+      return [];
     });
 
     let recommendations = [];
     let insight = null;
 
-    if (bookings.length > 0) {
+    if (bookings && bookings.length > 0) {
       // 2. Build User Preference Vector
       const stats = {
         destinations: {},
@@ -48,7 +55,7 @@ exports.getPersonalizedRecommendations = async (req, res) => {
         }
       });
 
-      const avgPrice = stats.prices.reduce((a, b) => a + b, 0) / stats.prices.length;
+      const avgPrice = stats.prices.length > 0 ? stats.prices.reduce((a, b) => a + b, 0) / stats.prices.length : 0;
       const bookedPackageIds = bookings.map(b => b.package_id);
 
       // 3. Fetch Candidate Packages (Travel Packages from Agencies, excluding custom requests)
@@ -63,6 +70,9 @@ exports.getPersonalizedRecommendations = async (req, res) => {
           as: 'provider',
           where: { provider_type: 'AGENCY' } 
         }]
+      }).catch(err => {
+        console.error('Package fetch failed:', err.message);
+        return [];
       });
 
       // Filter out custom-request JSON descriptions
@@ -90,7 +100,7 @@ exports.getPersonalizedRecommendations = async (req, res) => {
         
         // Price Proximity (Weight: 0.3)
         const priceDiff = Math.abs(Number(pkg.price) - avgPrice);
-        const priceScore = Math.max(0, 1 - (priceDiff / avgPrice));
+        const priceScore = avgPrice > 0 ? Math.max(0, 1 - (priceDiff / avgPrice)) : 1;
         score += priceScore * 0.3;
 
         return { package: pkg, score };
@@ -120,7 +130,7 @@ exports.getPersonalizedRecommendations = async (req, res) => {
           where: { status: 'APPROVED', ...activeLimitedTimeFilter() },
           include: [{ model: Provider, as: 'provider', where: { provider_type: 'AGENCY' } }]
         }]
-      });
+      }).catch(() => []);
 
       recommendations = popular
         .map(p => p.package)
@@ -142,7 +152,7 @@ exports.getPersonalizedRecommendations = async (req, res) => {
           include: [{ model: Provider, as: 'provider', where: { provider_type: 'AGENCY' } }],
           order: [['created_at', 'DESC']],
           limit: 10
-        });
+        }).catch(() => []);
 
         recommendations = latestRaw
           .filter(pkg => {
@@ -166,7 +176,7 @@ exports.getPersonalizedRecommendations = async (req, res) => {
         if (apiKey) {
           const sysPrompt = `You are "Gojo Sensei", a travel expert. Keep it very short (max 20 words). 
           Explain why this package is perfect for ${req.user.name}. 
-          Previous history count: ${bookings.length}. Destination: ${topOne.destination}.`;
+          Previous history count: ${bookings ? bookings.length : 0}. Destination: ${topOne.destination}.`;
           
           const aiRes = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
             model: 'llama-3.1-8b-instant',
@@ -196,6 +206,6 @@ exports.getPersonalizedRecommendations = async (req, res) => {
 
   } catch (error) {
     console.error('Recommendation Error:', error);
-    res.status(500).json({ success: false, message: 'Failed to fetch recommendations' });
+    res.json({ success: true, data: { recommendations: [], insight: null } });
   }
 };

@@ -24,7 +24,7 @@ const QuoteForm = ({ requestId, onSubmit, onCancel, submitting }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!amount) return;
-    onSubmit(requestId, { amount: Number(amount), message });
+    onSubmit(requestId, { amount: amount.trim(), message });
   };
 
   return (

@@ -39,14 +39,11 @@ const Notification = sequelize.define('Notification', {
         type: DataTypes.INTEGER,
         allowNull: false
     },
-<<<<<<< Updated upstream
-=======
     notification_type: {
         type: DataTypes.ENUM('BOOKING', 'REFUND'),
         defaultValue: 'BOOKING',
         allowNull: false
     },
->>>>>>> Stashed changes
     is_read: {
         type: DataTypes.BOOLEAN,
         defaultValue: false

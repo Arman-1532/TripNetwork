@@ -207,11 +207,21 @@ router.post('/:requestId/bid', authenticate, authorize('PROVIDER'), async (req, 
             attributes: ['agency_name']
         });
 
-        const existingBidIndex = metadata.bids.findIndex(b => b.agencyId === agency_id);
+        if (!Array.isArray(metadata.bids)) {
+            metadata.bids = [];
+        }
+
+        const normalizedAmount = Math.round((Number(amount) + Number.EPSILON) * 100) / 100;
+        if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+            return res.status(400).json({ success: false, message: 'Invalid bid amount' });
+        }
+
+        // Use numeric comparison to avoid duplicate bids when agency_id type differs (string vs number).
+        const existingBidIndex = metadata.bids.findIndex(b => Number(b?.agencyId) === Number(agency_id));
         const newBid = {
-            agencyId:   agency_id,
+            agencyId:   Number(agency_id),
             agencyName: agencyProfile?.agency_name || req.user.name || 'Agency',
-            amount:     parseFloat(amount),
+            amount:     normalizedAmount,
             message,
             timestamp:  new Date().toISOString()
         };

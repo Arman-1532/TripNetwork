@@ -239,66 +239,74 @@ export default function Notifications() {
 
       {/* Details Modal */}
       {showDetails && selectedNotification && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6">
-            <h2 className="text-xl font-black text-on-surface mb-4">Booking Details</h2>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-700 max-w-md w-full p-6 shadow-2xl shadow-black/20">
+            <h2 className="text-xl font-black text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+              <Eye className="text-primary" size={24} />
+              Booking Details
+            </h2>
+            
             {isRefundNotification(selectedNotification) && (
-              <div className="mb-4 p-3 rounded-2xl bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700">
-                <p className="text-sm font-bold text-amber-700 dark:text-amber-300 flex items-center gap-2 mb-1">
-                  <RotateCcw size={14} /> Refund Request
+              <div className="mb-6 p-4 rounded-2xl bg-amber-50 dark:bg-amber-900/40 border border-amber-200 dark:border-amber-700/50">
+                <p className="text-sm font-black text-amber-700 dark:text-amber-300 flex items-center gap-2 mb-1">
+                  <RotateCcw size={16} /> Refund Request
                 </p>
-                <p className="text-xs text-amber-600 dark:text-amber-400">This traveler is requesting a refund. Please review and process accordingly.</p>
+                <p className="text-xs text-amber-800/80 dark:text-amber-400/90 leading-relaxed">This traveler is requesting a refund. Please review and process accordingly.</p>
               </div>
             )}
+            
             {isCustomRequestNotification(selectedNotification) && (
-              <div className="mb-4 p-3 rounded-2xl bg-primary/10 border border-primary/20">
-                <p className="text-sm font-bold text-primary mb-2">This is a custom travel request notification.</p>
+              <div className="mb-6 p-4 rounded-2xl bg-primary/5 dark:bg-primary/10 border border-primary/20">
+                <p className="text-sm font-bold text-primary mb-3">Custom travel request notification.</p>
                 <button
                   onClick={() => goToCustomRequest(selectedNotification)}
-                  className="bg-primary text-on-primary px-4 py-2 rounded-xl text-sm font-bold hover:bg-primary-dim transition-colors"
+                  className="w-full bg-primary text-on-primary py-2.5 rounded-xl text-sm font-black hover:bg-primary-dim transition-all shadow-md shadow-primary/20"
                 >
-                  View Request
+                  View Request Details
                 </button>
               </div>
             )}
-
-            <div className="space-y-4 mb-6">
-              <div>
-                <p className="text-xs text-on-surface-variant uppercase font-bold">Package</p>
-                <p className="text-on-surface font-bold">{selectedNotification.package_title}</p>
-              </div>
-
-              <div>
-                <p className="text-xs text-on-surface-variant uppercase font-bold">Traveler Name</p>
-                <p className="text-on-surface">{selectedNotification.traveler_name}</p>
-              </div>
-
-              <div>
-                <p className="text-xs text-on-surface-variant uppercase font-bold">Email</p>
-                <p className="text-on-surface">{selectedNotification.traveler_email}</p>
-              </div>
-
-              <div>
-                <p className="text-xs text-on-surface-variant uppercase font-bold">Phone</p>
-                <p className="text-on-surface">{selectedNotification.traveler_phone}</p>
-              </div>
-
-              <div>
-                <p className="text-xs text-on-surface-variant uppercase font-bold">Number of Travelers</p>
-                <p className="text-on-surface font-bold">{selectedNotification.num_travelers}</p>
-              </div>
-
-              <div>
-                <p className="text-xs text-on-surface-variant uppercase font-bold">Booking Date</p>
-                <p className="text-on-surface">{formatDate(selectedNotification.created_at)}</p>
+ 
+            <div className="space-y-5 mb-8">
+              <div className="grid grid-cols-1 gap-4">
+                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-widest mb-1">Package / Request</p>
+                  <p className="text-sm text-slate-900 dark:text-white font-bold">{selectedNotification.package_title}</p>
+                </div>
+ 
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50">
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-widest mb-1">Traveler</p>
+                    <p className="text-sm text-slate-900 dark:text-white font-bold">{selectedNotification.traveler_name}</p>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50">
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-widest mb-1">Size</p>
+                    <p className="text-sm text-slate-900 dark:text-white font-bold">{selectedNotification.num_travelers} Person(s)</p>
+                  </div>
+                </div>
+ 
+                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-widest mb-1">Contact Email</p>
+                  <p className="text-sm text-slate-900 dark:text-white font-medium">{selectedNotification.traveler_email}</p>
+                </div>
+ 
+                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-widest mb-1">Phone Number</p>
+                  <p className="text-sm text-slate-900 dark:text-white font-medium">{selectedNotification.traveler_phone}</p>
+                </div>
+ 
+                <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700/50">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase font-black tracking-widest mb-1">Received At</p>
+                  <p className="text-sm text-slate-900 dark:text-white font-medium">{formatDate(selectedNotification.created_at)}</p>
+                </div>
               </div>
             </div>
-
+ 
             <button
               onClick={() => setShowDetails(false)}
-              className="w-full bg-primary text-on-primary py-3 rounded-2xl font-bold hover:bg-primary-dim transition-colors"
+              className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-3.5 rounded-2xl font-black text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-black/10"
             >
-              Close
+              Close Details
             </button>
           </div>
         </div>

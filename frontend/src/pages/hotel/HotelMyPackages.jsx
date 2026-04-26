@@ -1,15 +1,28 @@
 import React from 'react';
+import { 
+  Building2, MapPin, DollarSign, Bed, 
+  Trash2, Pencil, Image as ImageIcon, 
+  X, Save, Sparkles, CheckCircle2, 
+  AlertCircle, Hotel, Layers
+} from 'lucide-react';
 
-const HotelMyPackages = ({ myPackages, loadingMy, editingId, editForm, setEditForm, startEdit, cancelEdit, saveEdit, onDeletePackage, error, success }) => {
-  const editFieldClass = 'w-full rounded-2xl px-4 py-2.5 border border-outline-variant/30 bg-white text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-300 dark:border-slate-600';
-  const editLabelClass = 'text-xs font-extrabold text-slate-700 dark:text-slate-100 tracking-wide';
+const HotelMyPackages = ({ 
+  myPackages, loadingMy, editingId, editForm, 
+  setEditForm, startEdit, cancelEdit, saveEdit, 
+  onDeletePackage, error, success 
+}) => {
+  const editFieldClass = 'w-full bg-surface-container-low dark:bg-slate-800 rounded-2xl px-4 py-3 border border-outline-variant/10 focus:ring-2 focus:ring-primary/20 outline-none font-medium text-on-surface dark:text-white transition-all';
+  const editLabelClass = 'text-[10px] font-black uppercase tracking-[0.18em] text-on-surface-variant dark:text-slate-300 pl-1';
 
   const getStatusStyle = (status) => {
     const normalizedStatus = String(status || '').toLowerCase();
-    if (normalizedStatus === 'active') return 'bg-green-100 text-green-700 border-green-200 dark:bg-green-500/20 dark:text-green-300 dark:border-green-500/40';
-    if (normalizedStatus === 'pending') return 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-500/20 dark:text-yellow-300 dark:border-yellow-500/40';
-    if (normalizedStatus === 'rejected') return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/40';
-    return 'bg-surface-container text-on-surface-variant border-outline-variant/20';
+    if (normalizedStatus === 'active' || normalizedStatus === 'approved') 
+      return 'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-300 dark:border-green-700/40';
+    if (normalizedStatus === 'pending') 
+      return 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-700/40';
+    if (normalizedStatus === 'rejected') 
+      return 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-700/40';
+    return 'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700';
   };
 
   const parseDestination = (destination) => {
@@ -21,209 +34,206 @@ const HotelMyPackages = ({ myPackages, loadingMy, editingId, editForm, setEditFo
     };
   };
 
+  const safePackages = Array.isArray(myPackages) ? myPackages : [];
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-black text-on-surface">My Offerings</h1>
-        <p className="text-sm text-on-surface-variant dark:text-on-surface-variant">Manage your posted hotel packages</p>
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      
+      {/* ── Page Header ── */}
+      <div className="rounded-[2rem] border border-slate-200/80 dark:border-slate-700 bg-gradient-to-br from-white via-slate-50 to-slate-100/80 dark:from-slate-900 dark:via-slate-850 dark:to-slate-900 p-6 md:p-8 shadow-sm">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 text-primary text-xs font-black uppercase tracking-widest">
+            <Layers size={14} />
+            Inventory Management
+          </div>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-on-surface dark:text-white">
+            My Posted Offerings
+          </h1>
+          <p className="text-on-surface-variant dark:text-slate-400">
+            Manage and update your hotel's room types, pricing, and visibility.
+          </p>
+        </div>
       </div>
 
-      {error && <div className="p-3 rounded-2xl bg-error-container text-on-error-container text-sm">{error}</div>}
-      {success && <div className="p-3 rounded-2xl bg-primary-container/30 text-on-surface text-sm">{success}</div>}
+      {/* ── Alerts ── */}
+      {error && (
+        <div className="flex items-center gap-3 p-4 rounded-[1.5rem] bg-error-container text-on-error-container border border-error/10 animate-in shake-in duration-500">
+          <AlertCircle size={18} />
+          <p className="font-bold text-sm">{error}</p>
+        </div>
+      )}
+      {success && (
+        <div className="flex items-center gap-3 p-4 rounded-[1.5rem] bg-primary/10 text-primary border border-primary/20 animate-in zoom-in duration-500">
+          <CheckCircle2 size={18} />
+          <p className="font-bold text-sm">{success}</p>
+        </div>
+      )}
 
-      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-outline-variant/10 p-6 space-y-5">
-        <div className="space-y-1">
-          <div>
-            <h2 className="text-lg font-extrabold text-on-surface dark:text-white">My Posted Hotel Packages</h2>
-            <p className="text-xs sm:text-sm text-on-surface-variant dark:text-white/70">Manage and update all your hotel listings with better clarity</p>
+      {/* ── Content ── */}
+      <section className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200/80 dark:border-slate-700 p-6 md:p-8 shadow-sm space-y-6">
+        <div className="flex items-center gap-3 border-b border-outline-variant/10 pb-5">
+          <div className="p-2 rounded-xl bg-primary/10 text-primary">
+            <Hotel size={20} />
           </div>
+          <h2 className="text-xl font-black text-on-surface dark:text-white uppercase tracking-tight">
+            Active Hotel Room Offerings
+          </h2>
+          {!loadingMy && (
+            <span className="ml-auto px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-black">
+              {safePackages.length} {safePackages.length === 1 ? 'offering' : 'offerings'}
+            </span>
+          )}
         </div>
 
         {loadingMy ? (
-          <div className="rounded-2xl border border-outline-variant/10 bg-surface-container-low px-4 py-6 text-sm text-on-surface-variant dark:text-white/80">
-            Loading your hotel packages...
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-72 bg-surface-container animate-pulse rounded-[2rem]" />
+            ))}
           </div>
-        ) : myPackages.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-outline-variant/30 bg-surface-container-low px-4 py-8 text-center">
-            <div className="text-sm font-bold text-on-surface dark:text-white">No packages posted yet</div>
-            <div className="text-xs text-on-surface-variant dark:text-white/70 mt-1">Create a new offering to start receiving bookings.</div>
+        ) : safePackages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+              <Hotel size={36} className="text-primary/40" />
+            </div>
+            <div>
+              <p className="font-black text-on-surface dark:text-white text-lg">No offerings yet</p>
+              <p className="text-sm text-on-surface-variant dark:text-slate-400 mt-1">
+                Head over to <span className="text-primary font-bold">Post Offering</span> to list your first room.
+              </p>
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
-            {myPackages.map((p) => (
-              <div
-                key={p.package_id}
-                className={`rounded-2xl border p-4 sm:p-5 transition-all duration-200 ${
-                  editingId === p.package_id
-                    ? 'bg-surface border-primary/30 shadow-[0_0_0_1px_rgba(var(--color-primary-rgb),0.08)]'
-                    : 'bg-gradient-to-br from-surface-container-low to-white dark:from-slate-900 dark:to-slate-800/90 border-outline-variant/20 hover:border-primary/30 hover:shadow-md'
-                }`}
-              >
-                {editingId === p.package_id ? (
-                  <div className="space-y-4 max-h-[80vh] overflow-y-auto pr-1 rounded-2xl border border-primary/20 bg-white/90 dark:bg-slate-900/80 p-3 sm:p-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <h3 className="font-black text-on-surface dark:text-white text-base sm:text-lg">Edit Offering</h3>
-                      <span className={`px-2.5 py-1 rounded-full border text-xs font-bold ${getStatusStyle(p.status)}`}>
-                        {p.status || 'Unknown'}
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className={editLabelClass}>Short Title *</label>
-                        <input
-                          className={editFieldClass}
-                          value={editForm.shortTitle || ''}
-                          onChange={(e) => setEditForm(f => ({ ...f, shortTitle: e.target.value }))}
-                          placeholder="e.g., Luxury Beach Resort"
-                        />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {safePackages.map((p) => {
+              const isEditing = editingId === p.package_id;
+              const parsedDest = parseDestination(p.destination);
+              
+              return (
+                <div 
+                  key={p.package_id}
+                  className={`group relative rounded-[2rem] overflow-hidden bg-white dark:bg-slate-900 border transition-all duration-300
+                    ${isEditing 
+                      ? 'border-primary/30 shadow-xl shadow-primary/10 ring-1 ring-primary/20' 
+                      : 'border-slate-200/90 dark:border-slate-700 hover:shadow-xl hover:shadow-slate-900/8 hover:-translate-y-0.5'
+                    }`}
+                >
+                  {/* Image / Hero (Only if not editing) */}
+                  {!isEditing && (
+                    <div className="h-48 overflow-hidden relative">
+                      {p.image_url ? (
+                        <img src={p.image_url} alt={p.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-primary/10 via-slate-100 to-slate-200 dark:from-primary/10 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center">
+                          <Building2 size={44} className="text-primary/20" />
+                        </div>
+                      )}
+                      
+                      {/* Price overlay */}
+                      <div className="absolute bottom-3 left-4">
+                        <span className="text-2xl font-black text-white drop-shadow-lg">৳{Number(p.price).toLocaleString()}</span>
+                        <span className="text-white/80 text-[10px] font-bold uppercase tracking-wider ml-1">/ night</span>
                       </div>
-
-                      <div className="space-y-1">
-                        <label className={editLabelClass}>Country *</label>
-                        <input
-                          className={editFieldClass}
-                          value={editForm.country || ''}
-                          onChange={(e) => setEditForm(f => ({ ...f, country: e.target.value }))}
-                          placeholder="e.g., Bangladesh"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className={editLabelClass}>City *</label>
-                        <input
-                          className={editFieldClass}
-                          value={editForm.city || ''}
-                          onChange={(e) => setEditForm(f => ({ ...f, city: e.target.value }))}
-                          placeholder="e.g., Cox's Bazar"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className={editLabelClass}>Area</label>
-                        <input
-                          className={editFieldClass}
-                          value={editForm.area || ''}
-                          onChange={(e) => setEditForm(f => ({ ...f, area: e.target.value }))}
-                          placeholder="e.g., Downtown"
-                        />
-                      </div>
-
-                      <div className="space-y-1 md:col-span-2">
-                        <label className={editLabelClass}>Full Address</label>
-                        <textarea
-                          className={editFieldClass}
-                          value={editForm.fullAddress || ''}
-                          onChange={(e) => setEditForm(f => ({ ...f, fullAddress: e.target.value }))}
-                          placeholder="Complete address"
-                          rows="2"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className={editLabelClass}>Room Type *</label>
-                        <select
-                          className={editFieldClass}
-                          value={editForm.roomType || 'Single'}
-                          onChange={(e) => setEditForm(f => ({ ...f, roomType: e.target.value }))}
-                        >
-                          <option value="Single">Single</option>
-                          <option value="Double">Double</option>
-                          <option value="Suite">Suite</option>
-                          <option value="Deluxe">Deluxe</option>
-                          <option value="Penthouse">Penthouse</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className={editLabelClass}>Bed Type *</label>
-                        <select
-                          className={editFieldClass}
-                          value={editForm.bedType || ''}
-                          onChange={(e) => setEditForm(f => ({ ...f, bedType: e.target.value }))}
-                        >
-                          <option value="">Select Bed Type</option>
-                          <option value="Single Bed">Single Bed</option>
-                          <option value="Double Bed">Double Bed</option>
-                          <option value="Twin Beds">Twin Beds</option>
-                          <option value="King Size">King Size</option>
-                          <option value="Queen Size">Queen Size</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1 md:col-span-2">
-                        <label className={editLabelClass}>Price (BDT per night) *</label>
-                        <input
-                          type="number"
-                          className={editFieldClass}
-                          value={editForm.price || ''}
-                          onChange={(e) => setEditForm(f => ({ ...f, price: e.target.value }))}
-                          placeholder="e.g., 5000"
-                        />
-                      </div>
-
-                      <div className="space-y-1 md:col-span-2">
-                        <label className={editLabelClass}>Detailed Description</label>
-                        <textarea
-                          className={editFieldClass}
-                          value={editForm.fullDescription || ''}
-                          onChange={(e) => setEditForm(f => ({ ...f, fullDescription: e.target.value }))}
-                          placeholder="Provide detailed description about the room and amenities"
-                          rows="4"
-                        />
+                      
+                      {/* Status badge */}
+                      <div className="absolute top-4 left-4">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border backdrop-blur-md ${getStatusStyle(p.status)}`}>
+                          <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                          {p.status || 'Pending'}
+                        </span>
                       </div>
                     </div>
+                  )}
 
-                    <div className="flex flex-col sm:flex-row gap-2 pt-1">
-                      <button onClick={() => saveEdit(p.package_id)} className="flex-1 bg-primary text-on-primary px-4 py-2.5 rounded-xl font-bold hover:bg-primary-hover">Save Changes</button>
-                      <button onClick={cancelEdit} className="flex-1 px-4 py-2.5 rounded-xl bg-surface border border-outline-variant/10 hover:bg-surface-container">Cancel</button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {(() => {
-                      const parsedDestination = parseDestination(p.destination);
-                      return (
-                        <div className="space-y-3">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <div className="font-black text-on-surface dark:text-white text-base sm:text-xl tracking-tight truncate">{p.title}</div>
-                              <div className="text-sm text-on-surface-variant dark:text-white/75 mt-1 font-medium">
-                                {parsedDestination.city}
-                                {parsedDestination.country ? `, ${parsedDestination.country}` : ''}
-                              </div>
-                            </div>
-                            <span className={`shrink-0 px-2.5 py-1 rounded-full border text-xs font-bold ${getStatusStyle(p.status)}`}>
-                              {p.status || 'Unknown'}
-                            </span>
+                  {/* Body */}
+                  <div className="p-6">
+                    {isEditing ? (
+                      <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div className="flex items-center gap-2 pb-3 border-b border-outline-variant/10">
+                          <Pencil size={16} className="text-primary" />
+                          <span className="text-sm font-black text-on-surface dark:text-white uppercase tracking-wider">Edit Room Offering</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1.5">
+                            <label className={editLabelClass}>Title</label>
+                            <input className={editFieldClass} value={editForm.shortTitle} onChange={e => setEditForm(f => ({ ...f, shortTitle: e.target.value }))} />
                           </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            <div className="rounded-xl border border-primary/20 bg-primary/5 dark:bg-primary/10 px-3 py-2.5">
-                              <div className="text-[11px] uppercase tracking-wide text-on-surface-variant font-semibold">Price</div>
-                              <div className="text-base sm:text-lg font-black text-primary">৳{Number(p.price || 0).toLocaleString()}</div>
-                            </div>
-                            <div className="rounded-xl border border-outline-variant/20 bg-white/80 dark:bg-slate-800/80 px-3 py-2.5">
-                              <div className="text-[11px] uppercase tracking-wide text-on-surface-variant font-semibold">Visibility</div>
-                              <div className="text-sm font-bold text-on-surface dark:text-white">{String(p.status || 'Unknown')}</div>
-                            </div>
+                          <div className="space-y-1.5">
+                            <label className={editLabelClass}>Image URL</label>
+                            <input className={editFieldClass} value={editForm.image_url} onChange={e => setEditForm(f => ({ ...f, image_url: e.target.value }))} />
                           </div>
-
-                          <div className="pt-2 flex flex-col sm:flex-row gap-2">
-                            <button onClick={() => startEdit(p)} className="sm:w-auto px-4 py-2.5 rounded-xl bg-surface text-on-surface border border-outline-variant/20 hover:bg-surface-container font-bold">
-                              Edit Offering
-                            </button>
-                            <button onClick={() => onDeletePackage(p.package_id)} className="sm:w-auto px-4 py-2.5 rounded-xl bg-error-container text-on-error-container border border-error/30 hover:opacity-90 font-bold">
-                              Delete
-                            </button>
+                          <div className="space-y-1.5">
+                            <label className={editLabelClass}>Price (BDT)</label>
+                            <input type="number" className={editFieldClass} value={editForm.price} onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))} />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className={editLabelClass}>Room Type</label>
+                            <select className={editFieldClass} value={editForm.roomType} onChange={e => setEditForm(f => ({ ...f, roomType: e.target.value }))}>
+                              <option value="Single">Single</option>
+                              <option value="Double">Double</option>
+                              <option value="Suite">Suite</option>
+                              <option value="Deluxe">Deluxe</option>
+                            </select>
                           </div>
                         </div>
-                      );
-                    })()}
-                  </>
-                )}
-              </div>
-            ))}
+                        <div className="flex gap-2.5 pt-2">
+                          <button onClick={() => saveEdit(p.package_id)} className="flex-1 flex items-center justify-center gap-2 bg-primary text-on-primary py-3 rounded-2xl font-black text-xs shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
+                            <Save size={14} /> Save
+                          </button>
+                          <button onClick={cancelEdit} className="flex-1 flex items-center justify-center gap-2 bg-surface-container border border-outline-variant/10 text-on-surface font-bold py-3 rounded-2xl text-xs hover:bg-surface-container-high transition-all">
+                            <X size={14} /> Cancel
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-5">
+                        <div className="space-y-1">
+                          <h3 className="text-xl font-black text-on-surface dark:text-white tracking-tight group-hover:text-primary transition-colors">{p.title}</h3>
+                          <div className="flex items-center gap-2 text-on-surface-variant dark:text-slate-400 text-xs font-bold">
+                            <MapPin size={12} className="text-primary" />
+                            {parsedDest.city}{parsedDest.country ? `, ${parsedDest.country}` : ''}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="flex items-center gap-2 p-3 rounded-2xl bg-surface-container dark:bg-slate-800/50 border border-outline-variant/10">
+                            <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                              <Bed size={14} />
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant dark:text-slate-500">Room Type</p>
+                              <p className="text-xs font-bold text-on-surface dark:text-white">
+                                {editForm.roomType || 'Standard'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 p-3 rounded-2xl bg-surface-container dark:bg-slate-800/50 border border-outline-variant/10">
+                            <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                              <Sparkles size={14} />
+                            </div>
+                            <div>
+                              <p className="text-[10px] font-black uppercase tracking-wider text-on-surface-variant dark:text-slate-500">Service</p>
+                              <p className="text-xs font-bold text-on-surface dark:text-white uppercase">Premium</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                          <button onClick={() => startEdit(p)} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-surface-container border border-outline-variant/10 text-on-surface font-bold text-sm hover:bg-primary hover:text-on-primary hover:border-primary transition-all group/btn">
+                            <Pencil size={15} className="group-hover/btn:rotate-12 transition-transform" />
+                            Edit
+                          </button>
+                          <button onClick={() => onDeletePackage(p.package_id)} className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/40 text-red-600 dark:text-red-400 font-bold text-sm hover:bg-red-500 hover:text-white hover:border-red-500 transition-all group/del">
+                            <Trash2 size={15} className="group-hover/del:scale-110 transition-transform" />
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>

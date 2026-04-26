@@ -155,8 +155,6 @@ const Dashboard = () => {
     }
   };
 
-<<<<<<< Updated upstream
-=======
   const formatIsoDuration = (iso) => {
     if (!iso || typeof iso !== 'string') return '—';
     const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
@@ -169,7 +167,6 @@ const Dashboard = () => {
     return '—';
   };
 
->>>>>>> Stashed changes
   return (
     <div className="space-y-12 animate-in fade-in duration-700">
       <Hero />
@@ -204,10 +201,7 @@ const Dashboard = () => {
               const itinerary = offer?.itineraries?.[0];
               const seg0 = itinerary?.segments?.[0];
               const segLast = itinerary?.segments?.[itinerary?.segments?.length - 1];
-<<<<<<< Updated upstream
-=======
               const segments = Array.isArray(itinerary?.segments) ? itinerary.segments : [];
->>>>>>> Stashed changes
               const from = seg0?.departure?.iataCode;
               const to = segLast?.arrival?.iataCode;
               const dep = seg0?.departure?.at;
@@ -252,10 +246,6 @@ const Dashboard = () => {
                     <div className="font-semibold leading-relaxed">
                       {dep ? new Date(dep).toLocaleString() : '—'} <span className="text-slate-500">→</span> {arr ? new Date(arr).toLocaleString() : '—'}
                     </div>
-<<<<<<< Updated upstream
-                  </div>
-
-=======
                     <div className="mt-2 text-xs text-slate-300">
                       Duration: <span className="font-semibold text-slate-100">{formatIsoDuration(itinerary?.duration)}</span> | Stops: <span className="font-semibold text-slate-100">{stopCount}</span>
                     </div>
@@ -322,7 +312,6 @@ const Dashboard = () => {
                     </div>
                   )}
 
->>>>>>> Stashed changes
                   <button
                     onClick={() => handleBookFlight(offer)}
                     disabled={bookPayLoading}
@@ -435,15 +424,9 @@ const Dashboard = () => {
           )}
         </div>
 
-        {recoError && !recoLoading && (
-          <div className="text-sm bg-error-container text-on-error-container p-3 rounded-2xl">
-            {recoError}
-          </div>
-        )}
-
-        {!recoLoading && !recoError && recommendations.length === 0 && (
+        {(recoError || (!recoLoading && recommendations.length === 0)) && !recoLoading && (
           <div className="text-sm text-on-surface-variant bg-surface-container border border-outline-variant/10 p-4 rounded-2xl">
-            No personalized recommendations yet. Book a package to improve your recommendations.
+            Buy some packages to get the recommendation.
           </div>
         )}
 

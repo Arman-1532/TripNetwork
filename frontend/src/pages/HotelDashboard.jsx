@@ -28,7 +28,8 @@ const HotelDashboard = () => {
 
   const [offering, setOffering] = useState({
     country: '', city: '', area: '', fullAddress: '',
-    roomType: 'Single', price: '', bedType: '', fullDescription: '', shortTitle: ''
+    roomType: 'Single', price: '', bedType: '', fullDescription: '', shortTitle: '',
+    image_url: ''
   });
 
   const user = useMemo(() => {
@@ -111,11 +112,21 @@ const HotelDashboard = () => {
         fullAddress: offering.fullAddress, roomType: offering.roomType,
         bedType: offering.bedType, fullDescription: offering.fullDescription,
       });
-      const body = { title: offering.shortTitle, destination: offering.city, price: Number(offering.price), description };
+      const body = { 
+        title: offering.shortTitle, 
+        destination: offering.city, 
+        price: Number(offering.price), 
+        image_url: offering.image_url,
+        description 
+      };
       const res = await api.__raw.hotels.createPackage(body);
       if (res?.data?.success) {
         setSuccess('Offering posted successfully');
-        setOffering({ country: '', city: '', area: '', fullAddress: '', roomType: 'Single', price: '', bedType: '', fullDescription: '', shortTitle: '' });
+        setOffering({ 
+          country: '', city: '', area: '', fullAddress: '', 
+          roomType: 'Single', price: '', bedType: '', 
+          fullDescription: '', shortTitle: '', image_url: '' 
+        });
         await loadMyPackages();
       } else {
         setError(res?.data?.message || 'Failed to post offering');
@@ -151,7 +162,8 @@ const HotelDashboard = () => {
       fullAddress: descData.fullAddress || '',
       roomType: descData.roomType || 'Single',
       bedType: descData.bedType || '',
-      fullDescription: descData.fullDescription || ''
+      fullDescription: descData.fullDescription || '',
+      image_url: pkg.image_url || ''
     });
   };
 
@@ -174,6 +186,7 @@ const HotelDashboard = () => {
         title: editForm.shortTitle,
         destination: editForm.destination,
         price: Number(editForm.price),
+        image_url: editForm.image_url,
         description: description
       };
       const res = await api.packages.update(packageId, payload);
