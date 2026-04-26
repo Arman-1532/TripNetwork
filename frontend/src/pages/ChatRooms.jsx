@@ -1,8 +1,26 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MessageSquare, Users, List, ChevronRight, AlertCircle } from 'lucide-react';
+import { MessageSquare, List, ChevronRight, AlertCircle } from 'lucide-react';
 import io from 'socket.io-client';
 import { api } from '../services/api';
+
+const dedupeRoomsByPackageId = (rooms) => {
+  const map = new Map();
+
+  (Array.isArray(rooms) ? rooms : []).forEach((room) => {
+    const id = Number(room?.packageId);
+    if (!Number.isFinite(id)) return;
+
+    if (!map.has(id)) {
+      map.set(id, {
+        ...room,
+        packageId: id
+      });
+    }
+  });
+
+  return Array.from(map.values());
+};
 
 const ChatRoomsPage = () => {
   const navigate = useNavigate();
@@ -44,7 +62,7 @@ const ChatRoomsPage = () => {
           setRooms([]);
           return;
         }
-        setRooms(Array.isArray(res.data) ? res.data : []);
+        setRooms(dedupeRoomsByPackageId(res.data));
       } catch (e) {
         setError(e?.message || 'Failed to load rooms');
       } finally {
@@ -73,13 +91,10 @@ const ChatRoomsPage = () => {
         </div>
       )}
 
-      <div className="bg-white dark:bg-slate-950 rounded-[2.5rem] border border-outline-variant/10 overflow-hidden shadow-2xl">
-        <div className="px-8 py-5 border-b border-outline-variant/10 bg-surface flex items-center justify-between">
-          <div className="flex items-center gap-2 font-bold">
+      <div className="bg-white dark:bg-slate-950 rounded-[2.5rem] border border-slate-200/90 dark:border-slate-700 overflow-hidden shadow-2xl">
+        <div className="px-8 py-5 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-white dark:from-slate-900 dark:to-slate-900 flex items-center justify-between">
+          <div className="flex items-center gap-2 font-bold text-violet-700 dark:text-violet-300">
             <List size={18} /> Rooms
-          </div>
-          <div className="text-xs text-on-surface-variant flex items-center gap-2">
-            <Users size={16} /> JWT socket-auth enabled
           </div>
         </div>
 
@@ -98,13 +113,18 @@ const ChatRoomsPage = () => {
                 <button
                   key={r.packageId}
                   onClick={() => navigate(`/chat/${r.packageId}`)}
-                  className="w-full flex items-center justify-between gap-4 p-4 rounded-2xl border border-outline-variant/10 hover:bg-surface-container-low transition-colors"
+                  className="w-full flex items-center justify-between gap-4 p-4 rounded-2xl border border-slate-200/90 dark:border-slate-700 bg-gradient-to-r from-white to-slate-50 dark:from-slate-900 dark:to-slate-850 hover:shadow-md hover:border-primary/30 transition-all"
                 >
                   <div className="text-left">
-                    <div className="font-extrabold text-on-surface">#{r.packageId} {r.title}</div>
-                    <div className="text-xs text-on-surface-variant">Open room</div>
+                    <div className="font-black text-slate-900 dark:text-slate-100 text-base md:text-lg tracking-tight">
+                      <span className="inline-block mr-2 rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-bold align-middle">
+                        #{r.packageId}
+                      </span>
+                      {r.title}
+                    </div>
+                    <div className="text-xs text-slate-600 dark:text-slate-300 font-medium mt-1">Open room</div>
                   </div>
-                  <ChevronRight className="text-on-surface-variant" />
+                  <ChevronRight className="text-slate-500 dark:text-slate-300" />
                 </button>
               ))}
             </div>

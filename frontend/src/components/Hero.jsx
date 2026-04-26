@@ -1,5 +1,4 @@
 import React from 'react';
-import { Receipt } from 'lucide-react';
 
 const Hero = () => {
   return (
@@ -20,15 +19,6 @@ const Hero = () => {
         <p className="text-xl text-white/80 font-light max-w-lg">
           Experience the world through a curated lens. Every destination is a new chapter in your story.
         </p>
-        <div className="flex gap-4">
-          <button className="bg-gradient-to-br from-primary to-primary-container text-white px-8 py-4 rounded-full font-bold shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all">
-            Explore Destinations
-          </button>
-          <button className="bg-white/10 backdrop-blur-md border border-white/20 text-white px-8 py-4 rounded-full font-bold hover:bg-white/20 transition-all flex items-center gap-2">
-            <Receipt size={20} />
-            View Invoices
-          </button>
-        </div>
       </div>
     </section>
   );

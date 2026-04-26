@@ -15,6 +15,13 @@ const AdminRequestDetail = () => {
 
   useEffect(() => {
     const load = async () => {
+      // Role safeguard
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      if (storedUser.role?.toLowerCase() !== 'admin') {
+        console.warn('⚠️ AdminRequestDetail mounted by non-admin user. Skipping fetch.');
+        return;
+      }
+
       try {
         setLoading(true);
         const res = await api.admin.pendingProviders();

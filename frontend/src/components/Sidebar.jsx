@@ -9,7 +9,8 @@ import {
   Building2,
   Hotel,
   MessageSquareText,
-  Shield
+  Shield,
+  Bell
 } from 'lucide-react';
 
 const Sidebar = ({ user, activeTab, setActiveTab, onLogout }) => {
@@ -31,6 +32,7 @@ const Sidebar = ({ user, activeTab, setActiveTab, onLogout }) => {
         { id: 'agencyPost', label: 'Post Package', icon: Plane, path: '/provider/agency/post' },
         { id: 'agencyRequests', label: 'Custom Requests', icon: MessageSquareText, path: '/provider/agency/requests' },
         { id: 'agencyPackages', label: 'My Packages', icon: Building2, path: '/provider/agency/packages' },
+        { id: 'notifications', label: 'Notifications', icon: Bell, path: '/notifications' },
         { id: 'chat', label: 'Chat', icon: MessageSquareText, path: '/chat' },
       ];
     }
@@ -40,6 +42,7 @@ const Sidebar = ({ user, activeTab, setActiveTab, onLogout }) => {
         { id: 'hotelProfile', label: 'Profile', icon: Edit3, path: '/provider/hotel/profile' },
         { id: 'hotelPost', label: 'Post Offering', icon: Hotel, path: '/provider/hotel/post' },
         { id: 'hotelPackages', label: 'My Offerings', icon: Building2, path: '/provider/hotel/packages' },
+        { id: 'notifications', label: 'Notifications', icon: Bell, path: '/notifications' },
       ];
     }
 

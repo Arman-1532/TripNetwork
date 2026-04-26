@@ -5,7 +5,7 @@ const AgencyProfile = ({ profile, setProfile, onUpdateProfile, error, success })
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-black text-on-surface">Agency Profile</h1>
-        <p className="text-sm text-on-surface-variant dark:text-black/80">Update your agency information</p>
+        <p className="text-sm text-on-surface-variant dark:text-on-surface-variant">Update your agency information</p>
       </div>
 
       {error && <div className="p-3 rounded-2xl bg-error-container text-on-error-container text-sm">{error}</div>}

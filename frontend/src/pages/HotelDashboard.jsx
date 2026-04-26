@@ -1,7 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { api } from '../services/api';
+import HotelProfilePage from './hotel/HotelProfilePage';
+import HotelPostOffering from './hotel/HotelPostOffering';
+import HotelMyPackages from './hotel/HotelMyPackages';
 
 const HotelDashboard = () => {
+  // ─── Shared State ────────────────────────────────────────────────────────────
   const [profile, setProfile] = useState({
     hotelName: '',
     hotelLocation: '',
@@ -21,18 +26,20 @@ const HotelDashboard = () => {
   const [editForm, setEditForm] = useState({});
   const [loadingMy, setLoadingMy] = useState(true);
 
+  const [offering, setOffering] = useState({
+    country: '', city: '', area: '', fullAddress: '',
+    roomType: 'Single', price: '', bedType: '', fullDescription: '', shortTitle: ''
+  });
+
   const user = useMemo(() => {
-    try {
-      return JSON.parse(localStorage.getItem('user') || '{}');
-    } catch {
-      return {};
-    }
+    try { return JSON.parse(localStorage.getItem('user') || '{}'); } catch { return {}; }
   }, []);
 
+  // ─── Effects ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     setProfile({
       hotelName: user.hotelName || user.hotel_name || '',
-      hotelLocation: user.hotelLocation || user.location || user.hotelLocation || '',
+      hotelLocation: user.hotelLocation || user.location || '',
       name: user.name || '',
       phone: user.phone || '',
       tradeLicenseId: user.tradeLicenseId || user.trade_license_id || '',
@@ -41,11 +48,27 @@ const HotelDashboard = () => {
     });
   }, [user]);
 
+  useEffect(() => { loadMyPackages(); }, []);
+
+  // ─── Helpers ─────────────────────────────────────────────────────────────────
+  const clearMessages = () => { setError(null); setSuccess(null); };
+
   const refreshMe = async () => {
     const res = await api.auth.me();
     if (res?.success) {
       localStorage.setItem('user', JSON.stringify(res.data.user));
+      const u = res.data.user;
+      setProfile({
+        hotelName: u.hotelName || u.hotel_name || '',
+        hotelLocation: u.hotelLocation || u.location || '',
+        name: u.name || '',
+        phone: u.phone || '',
+        tradeLicenseId: u.tradeLicenseId || u.trade_license_id || '',
+        address: u.address || '',
+        website: u.website || ''
+      });
     }
+    return res;
   };
 
   const loadMyPackages = async () => {
@@ -58,76 +81,40 @@ const HotelDashboard = () => {
     }
   };
 
-  useEffect(() => {
-    loadMyPackages();
-  }, []);
-
-  const startEdit = (pkg) => {
-    setEditingId(pkg.package_id);
-    setEditForm({
-      title: pkg.title || '',
-      destination: pkg.destination || '',
-      price: pkg.price || '',
-      description: pkg.description || ''
-    });
-  };
-
-  const cancelEdit = () => {
-    setEditingId(null);
-    setEditForm({});
-  };
-
-  const saveEdit = async (packageId) => {
-    setError(null);
-    setSuccess(null);
+  // ─── Handlers ────────────────────────────────────────────────────────────────
+  const onUpdateProfile = async (e) => {
+    e.preventDefault();
+    clearMessages();
     try {
-      const payload = {
-        title: editForm.title,
-        destination: editForm.destination,
-        price: Number(editForm.price),
-        description: editForm.description
-      };
-      const res = await api.packages.update(packageId, payload);
-      if (res?.success) {
-        setSuccess('Package updated');
-        setEditingId(null);
-        setEditForm({});
-        await loadMyPackages();
+      setPosting(true);
+      const res = await api.__raw.users.updateProfile(profile);
+      if (res?.data?.success) {
+        setSuccess('Hotel info updated');
+        await refreshMe();
       } else {
-        setError(res?.message || 'Failed to update package');
+        setError(res?.data?.message || 'Update failed');
       }
     } catch (err) {
-      setError(err?.response?.data?.message || 'Failed to update package');
+      setError(err?.response?.data?.message || 'Update failed');
+    } finally {
+      setPosting(false);
     }
   };
 
   const onPostOffering = async (e) => {
     e.preventDefault();
     setPosting(true);
-    setError(null);
-    setSuccess(null);
-
+    clearMessages();
     try {
       const description = JSON.stringify({
-        country: offering.country,
-        city: offering.city,
-        area: offering.area,
-        fullAddress: offering.fullAddress,
-        roomType: offering.roomType,
-        bedType: offering.bedType,
-        fullDescription: offering.fullDescription,
+        country: offering.country, city: offering.city, area: offering.area,
+        fullAddress: offering.fullAddress, roomType: offering.roomType,
+        bedType: offering.bedType, fullDescription: offering.fullDescription,
       });
-
-      const body = {
-        title: offering.shortTitle,
-        destination: offering.city,
-        price: Number(offering.price),
-        description
-      };
-
+      const body = { title: offering.shortTitle, destination: offering.city, price: Number(offering.price), description };
       const res = await api.__raw.hotels.createPackage(body);
       if (res?.data?.success) {
-        setSuccess('Offering posted (pending approval)');
+        setSuccess('Offering posted successfully');
         setOffering({ country: '', city: '', area: '', fullAddress: '', roomType: 'Single', price: '', bedType: '', fullDescription: '', shortTitle: '' });
         await loadMyPackages();
       } else {
@@ -140,120 +127,124 @@ const HotelDashboard = () => {
     }
   };
 
+  const startEdit = (pkg) => {
+    setEditingId(pkg.package_id);
+    // Parse the description to extract all the detailed fields
+    let descData = { country: '', city: '', area: '', fullAddress: '', roomType: '', bedType: '', fullDescription: '' };
+    try {
+      if (typeof pkg.description === 'string') {
+        descData = JSON.parse(pkg.description);
+      } else {
+        descData = pkg.description;
+      }
+    } catch (e) {
+      console.log('Could not parse description');
+    }
+
+    setEditForm({
+      shortTitle: pkg.title || '',
+      destination: pkg.destination || '',
+      price: pkg.price || '',
+      country: descData.country || '',
+      city: descData.city || '',
+      area: descData.area || '',
+      fullAddress: descData.fullAddress || '',
+      roomType: descData.roomType || 'Single',
+      bedType: descData.bedType || '',
+      fullDescription: descData.fullDescription || ''
+    });
+  };
+
+  const cancelEdit = () => { setEditingId(null); setEditForm({}); };
+
+  const saveEdit = async (packageId) => {
+    clearMessages();
+    try {
+      // Reconstruct the description with all fields
+      const description = JSON.stringify({
+        country: editForm.country,
+        city: editForm.city,
+        area: editForm.area,
+        fullAddress: editForm.fullAddress,
+        roomType: editForm.roomType,
+        bedType: editForm.bedType,
+        fullDescription: editForm.fullDescription,
+      });
+      const payload = {
+        title: editForm.shortTitle,
+        destination: editForm.destination,
+        price: Number(editForm.price),
+        description: description
+      };
+      const res = await api.packages.update(packageId, payload);
+      if (res?.success) {
+        setSuccess('Offering updated successfully');
+        setEditingId(null);
+        setEditForm({});
+        await loadMyPackages();
+      } else {
+        setError(res?.message || 'Failed to update offering');
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to update offering');
+    }
+  };
+
+  const onDeletePackage = async (packageId) => {
+    if (!window.confirm('Are you sure you want to delete this offering?')) return;
+    clearMessages();
+    try {
+      const res = await api.packages.delete(packageId);
+      if (res?.success) {
+        setSuccess('Offering deleted successfully');
+        await loadMyPackages();
+      } else {
+        setError(res?.message || 'Failed to delete offering');
+      }
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to delete offering');
+    }
+  };
+
+  // ─── Shared props bundles ─────────────────────────────────────────────────────
+  const sharedProps = { error, success };
+
   return (
-    <div className="space-y-10">
-      <div>
-        <h1 className="text-2xl font-black text-on-surface dark:text-black">Hotel Dashboard</h1>
-        <p className="text-sm text-on-surface-variant dark:text-black/80">Manage your offerings</p>
-      </div>
-
-      {error && <div className="p-3 rounded-2xl bg-error-container text-on-error-container text-sm">{error}</div>}
-      {success && <div className="p-3 rounded-2xl bg-primary-container/30 text-on-surface dark:text-white text-sm">{success}</div>}
-
-      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-outline-variant/10 p-6 flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-extrabold text-on-surface dark:text-white">Hotel Profile</h2>
-          <p className="text-sm text-on-surface-variant dark:text-white/80">View and update your profile on a separate page.</p>
-        </div>
-        <div>
-          <button onClick={() => navigate('/provider/hotel/profile')} className="bg-primary text-on-primary font-bold px-6 py-3 rounded-2xl">Open Profile</button>
-        </div>
-      </section>
-
-      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-outline-variant/10 p-6 space-y-4">
-        <h2 className="text-lg font-extrabold text-on-surface dark:text-white">Post Hotel Offering</h2>
-        <form onSubmit={onPostOffering} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Country</label>
-              <input required className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={offering.country} onChange={(e) => setOffering(o => ({ ...o, country: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">City</label>
-              <input required className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={offering.city} onChange={(e) => setOffering(o => ({ ...o, city: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Area</label>
-              <input className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={offering.area} onChange={(e) => setOffering(o => ({ ...o, area: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Full Address</label>
-              <input required className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={offering.fullAddress} onChange={(e) => setOffering(o => ({ ...o, fullAddress: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Room Type</label>
-              <select className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={offering.roomType} onChange={(e) => setOffering(o => ({ ...o, roomType: e.target.value }))}>
-                <option value="Single">Single</option>
-                <option value="Double">Double</option>
-                <option value="Suite">Suite</option>
-                <option value="Deluxe">Deluxe</option>
-              </select>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Price (BDT)</label>
-              <input required type="number" min="0" className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={offering.price} onChange={(e) => setOffering(o => ({ ...o, price: e.target.value }))} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-on-surface-variant dark:text-white">Bed Type</label>
-              <input className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={offering.bedType} onChange={(e) => setOffering(o => ({ ...o, bedType: e.target.value }))} />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-on-surface-variant dark:text-white">Detailed Description</label>
-            <textarea required className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10 min-h-24" value={offering.fullDescription} onChange={(e) => setOffering(o => ({ ...o, fullDescription: e.target.value }))} />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold text-on-surface-variant dark:text-white">Short Title</label>
-            <input required className="w-full bg-surface-container-low rounded-2xl px-4 py-3 border border-outline-variant/10" value={offering.shortTitle} onChange={(e) => setOffering(o => ({ ...o, shortTitle: e.target.value }))} />
-          </div>
-
-          <button disabled={posting} className="bg-primary text-on-primary font-bold px-6 py-3 rounded-2xl disabled:opacity-50">
-            {posting ? 'Posting...' : 'Post Offering'}
-          </button>
-        </form>
-      </section>
-
-      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-outline-variant/10 p-6 space-y-4">
-        <h2 className="text-lg font-extrabold text-on-surface dark:text-white">My Posted Hotel Packages</h2>
-        {loadingMy ? (
-          <div className="text-sm text-on-surface-variant dark:text-white/80">Loading...</div>
-        ) : myPackages.length === 0 ? (
-          <div className="text-sm text-on-surface-variant dark:text-white/80">No packages posted yet.</div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {myPackages.map((p) => (
-              <div key={p.package_id} className="border border-outline-variant/10 rounded-2xl p-4 bg-surface-container-low">
-                {editingId === p.package_id ? (
-                  <div className="space-y-3">
-                    <input className="w-full bg-white dark:bg-slate-800 rounded-2xl px-4 py-2" value={editForm.title} onChange={(e) => setEditForm(f => ({ ...f, title: e.target.value }))} />
-                    <input className="w-full bg-white dark:bg-slate-800 rounded-2xl px-4 py-2" value={editForm.destination} onChange={(e) => setEditForm(f => ({ ...f, destination: e.target.value }))} />
-                    <div className="grid grid-cols-2 gap-2">
-                      <input type="number" className="w-full bg-white dark:bg-slate-800 rounded-2xl px-4 py-2" value={editForm.price} onChange={(e) => setEditForm(f => ({ ...f, price: e.target.value }))} />
-                    </div>
-                    <textarea className="w-full bg-white dark:bg-slate-800 rounded-2xl px-4 py-2" value={editForm.description} onChange={(e) => setEditForm(f => ({ ...f, description: e.target.value }))} />
-                    <div className="flex gap-2">
-                      <button onClick={() => saveEdit(p.package_id)} className="bg-primary text-on-primary px-4 py-2 rounded-xl font-bold">Save</button>
-                      <button onClick={cancelEdit} className="px-4 py-2 rounded-xl bg-surface">Cancel</button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="font-black text-on-surface">{p.title}</div>
-                    <div className="text-xs text-on-surface-variant dark:text-white/80">{p.destination}</div>
-                    <div className="text-sm text-primary font-black mt-2">৳{p.price}</div>
-                    <div className="text-xs text-on-surface-variant dark:text-white/80">Status: {p.status}</div>
-                    <div className="mt-3 flex gap-2">
-                      <button onClick={() => startEdit(p)} className="px-3 py-2 rounded-xl bg-surface text-on-surface border">Edit</button>
-                    </div>
-                  </>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-    </div>
+    <Routes>
+      <Route index element={<Navigate to="profile" replace />} />
+      <Route
+        path="profile"
+        element={
+          <HotelProfilePage
+            profile={profile} setProfile={setProfile}
+            onUpdateProfile={onUpdateProfile} posting={posting}
+            {...sharedProps}
+          />
+        }
+      />
+      <Route
+        path="post"
+        element={
+          <HotelPostOffering
+            offering={offering} setOffering={setOffering}
+            onPostOffering={onPostOffering} posting={posting}
+            {...sharedProps}
+          />
+        }
+      />
+      <Route
+        path="packages"
+        element={
+          <HotelMyPackages
+            myPackages={myPackages} loadingMy={loadingMy}
+            editingId={editingId} editForm={editForm} setEditForm={setEditForm}
+            startEdit={startEdit} cancelEdit={cancelEdit} saveEdit={saveEdit}
+            onDeletePackage={onDeletePackage}
+            {...sharedProps}
+          />
+        }
+      />
+    </Routes>
   );
 };
 
