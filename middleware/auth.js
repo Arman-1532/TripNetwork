@@ -4,7 +4,14 @@
  */
 
 const jwt = require('jsonwebtoken');
-const { findUserById } = require('../models/index');
+const { User, Provider } = require('../models/index');
+
+/**
+ * Find user by ID (helper function)
+ */
+const findUserById = async (userId) => {
+  return await User.findOne({ where: { user_id: userId } });
+};
 
 /**
  * Verify JWT token and attach user to request
@@ -32,7 +39,7 @@ const authenticate = async (req, res, next) => {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_secret');
 
     // Find user
     const user = await findUserById(decoded.id);
@@ -44,11 +51,19 @@ const authenticate = async (req, res, next) => {
       });
     }
 
+    // Check if user is blocked
+    if (user.status === 'BLOCKED') {
+      return res.status(403).json({
+        success: false,
+        message: 'Your account has been blocked by the administrator. You no longer have access to the system.'
+      });
+    }
+
     // Check if user is still approved
     // DB uses 'ACTIVE', 'PENDING', 'BLOCKED'
-    if (user.approvalStatus !== 'ACTIVE') {
+    if (user.status !== 'ACTIVE') {
       // If pending, specific message
-      if (user.approvalStatus === 'PENDING') {
+      if (user.status === 'PENDING') {
         return res.status(403).json({
           success: false,
           message: 'Account is pending approval. Please wait for admin approval.'
@@ -61,14 +76,23 @@ const authenticate = async (req, res, next) => {
       });
     }
 
+    // Build user object with provider type if applicable
+    let providerType = null;
+    if (user.role === 'PROVIDER') {
+      const provider = await Provider.findOne({ where: { provider_id: user.user_id } });
+      if (provider) {
+        providerType = provider.provider_type;
+      }
+    }
+
     // Attach user to request
     req.user = {
-      id: user.id,
+      id: user.user_id,
       email: user.email,
       role: user.role,
-      providerType: user.providerType, // Added
-      name: user.name, // Added
-      approvalStatus: user.approvalStatus
+      name: user.name,
+      status: user.status,
+      providerType: providerType
     };
 
     next();
@@ -134,5 +158,6 @@ const authorize = (...allowedRoles) => {
 
 module.exports = {
   authenticate,
-  authorize
+  authorize,
+  findUserById
 };

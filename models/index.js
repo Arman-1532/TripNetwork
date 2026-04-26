@@ -16,6 +16,8 @@ const Package  = require('./Package');
 const Booking  = require('./Booking');
 const Payment  = require('./Payment');
 const ChatMessage = require('./ChatMessage');
+const Notification = require('./Notification');
+const Review = require('./Review');
 
 // ── Associations ──────────────────────────────────────────────────────────────
 
@@ -62,6 +64,14 @@ ChatMessage.belongsTo(Package, { foreignKey: 'package_id', as: 'package' });
 // User ↔ ChatMessage (1-to-many)
 User.hasMany(ChatMessage, { foreignKey: 'sender_user_id', as: 'sentMessages' });
 ChatMessage.belongsTo(User, { foreignKey: 'sender_user_id', as: 'sender' });
+
+// Package ↔ Review (1-to-many)
+Package.hasMany(Review, { foreignKey: 'package_id', as: 'reviews' });
+Review.belongsTo(Package, { foreignKey: 'package_id', as: 'package' });
+
+// Traveler ↔ Review (1-to-many) - traveler_id in Review references traveler_id/user_id
+Traveler.hasMany(Review, { foreignKey: 'traveler_id', as: 'reviews' });
+Review.belongsTo(Traveler, { foreignKey: 'traveler_id', as: 'traveler' });
 
 // ── Auth helpers (previously lived in models/User.js class) ──────────────────
 
@@ -202,7 +212,7 @@ function mapDbUserToModel(row) {
         id:            row.user_id,
         email:         row.email,
         password:      row.password_hash,
-        role:          row.role.toLowerCase(),
+        role:          row.role, // Keep original case (TRAVELER, PROVIDER, ADMIN)
         approvalStatus: row.status,
         name:          row.name,
         phone:         row.phone,
@@ -218,7 +228,7 @@ function mapDbUserToModel(row) {
 
 module.exports = {
     sequelize,
-    User, Traveler, Provider, Hotel, Agency, Package, Booking, Payment, ChatMessage,
+    User, Traveler, Provider, Hotel, Agency, Package, Booking, Payment, ChatMessage, Notification, Review,
     // Auth helpers
     createUser, findUserByEmail, findUserById, authenticateUser, mapDbUserToModel
 };

@@ -12,7 +12,7 @@ const Booking = sequelize.define('Booking', {
         allowNull: false
     },
     booking_type: {
-        type: DataTypes.ENUM('FLIGHT', 'PACKAGE'),
+        type: DataTypes.ENUM('FLIGHT', 'PACKAGE', 'HOTEL'),
         allowNull: false
     },
     package_id: {
@@ -59,7 +59,7 @@ const Booking = sequelize.define('Booking', {
         allowNull: false
     },
     booking_status: {
-        type: DataTypes.ENUM('PENDING', 'CONFIRMED', 'CANCELLED'),
+        type: DataTypes.ENUM('PENDING', 'CONFIRMED', 'CANCELLED', 'REFUND_REQUESTED'),
         defaultValue: 'PENDING'
     },
     created_at: {

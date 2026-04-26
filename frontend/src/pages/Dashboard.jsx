@@ -155,6 +155,21 @@ const Dashboard = () => {
     }
   };
 
+<<<<<<< Updated upstream
+=======
+  const formatIsoDuration = (iso) => {
+    if (!iso || typeof iso !== 'string') return '—';
+    const match = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?/);
+    if (!match) return iso;
+    const hours = Number(match[1] || 0);
+    const minutes = Number(match[2] || 0);
+    if (hours && minutes) return `${hours}h ${minutes}m`;
+    if (hours) return `${hours}h`;
+    if (minutes) return `${minutes}m`;
+    return '—';
+  };
+
+>>>>>>> Stashed changes
   return (
     <div className="space-y-12 animate-in fade-in duration-700">
       <Hero />
@@ -185,16 +200,26 @@ const Dashboard = () => {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {(flightResults || []).slice(0, 6).map((offer) => {
+            {(flightResults || []).map((offer) => {
               const itinerary = offer?.itineraries?.[0];
               const seg0 = itinerary?.segments?.[0];
               const segLast = itinerary?.segments?.[itinerary?.segments?.length - 1];
+<<<<<<< Updated upstream
+=======
+              const segments = Array.isArray(itinerary?.segments) ? itinerary.segments : [];
+>>>>>>> Stashed changes
               const from = seg0?.departure?.iataCode;
               const to = segLast?.arrival?.iataCode;
               const dep = seg0?.departure?.at;
               const arr = segLast?.arrival?.at;
               const price = offer?.price?.total;
               const currency = offer?.price?.currency;
+              const originalUsd = offer?.price?.originalUsdTotal;
+              const stopCount = Math.max(0, segments.length - 1);
+              const serpMeta = offer?.meta || {};
+              const layovers = Array.isArray(serpMeta?.layovers) ? serpMeta.layovers : [];
+              const segmentMeta = Array.isArray(serpMeta?.flights) ? serpMeta.flights : [];
+              const emissions = serpMeta?.carbonEmissions;
 
               return (
                 <div
@@ -227,8 +252,77 @@ const Dashboard = () => {
                     <div className="font-semibold leading-relaxed">
                       {dep ? new Date(dep).toLocaleString() : '—'} <span className="text-slate-500">→</span> {arr ? new Date(arr).toLocaleString() : '—'}
                     </div>
+<<<<<<< Updated upstream
                   </div>
 
+=======
+                    <div className="mt-2 text-xs text-slate-300">
+                      Duration: <span className="font-semibold text-slate-100">{formatIsoDuration(itinerary?.duration)}</span> | Stops: <span className="font-semibold text-slate-100">{stopCount}</span>
+                    </div>
+                  </div>
+
+                  {originalUsd && (
+                    <div className="text-xs text-on-surface-variant">
+                      Original USD: ${originalUsd}
+                    </div>
+                  )}
+
+                  <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-3 space-y-2 bg-white/70 dark:bg-slate-900/40">
+                    <div className="text-xs font-bold uppercase tracking-wide text-slate-700 dark:text-slate-300">Route Segments</div>
+                    {segments.length === 0 ? (
+                      <div className="text-sm text-slate-700 dark:text-slate-300">No segment details available.</div>
+                    ) : (
+                      <div className="space-y-2">
+                        {segments.map((segment, idx) => {
+                          const m = segmentMeta[idx] || {};
+                          return (
+                            <div key={segment?.id || `${offer.id}-seg-${idx}`} className="text-sm rounded-xl bg-slate-50 dark:bg-slate-800/70 p-2 text-slate-900 dark:text-slate-100">
+                              <div className="font-bold text-slate-900 dark:text-slate-100">
+                                {segment?.departure?.iataCode || '—'} → {segment?.arrival?.iataCode || '—'}
+                              </div>
+                              <div className="text-xs text-slate-700 dark:text-slate-300">
+                                {segment?.departure?.at ? new Date(segment.departure.at).toLocaleString() : '—'} to {segment?.arrival?.at ? new Date(segment.arrival.at).toLocaleString() : '—'}
+                              </div>
+                              <div className="text-xs text-slate-700 dark:text-slate-300 mt-1">
+                                Airline: {m?.airline || segment?.carrierCode || '—'} | Flight: {m?.flightNumber || segment?.number || '—'} | Aircraft: {m?.airplane || segment?.aircraft?.code || '—'} | Class: {m?.travelClass || '—'} | Legroom: {m?.legroom || '—'}
+                              </div>
+                              {!!(Array.isArray(m?.extensions) && m.extensions.length) && (
+                                <div className="text-xs text-slate-700 dark:text-slate-300 mt-1">
+                                  Extras: {m.extensions.join(', ')}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {layovers.length > 0 && (
+                    <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-3 bg-white/70 dark:bg-slate-900/40">
+                      <div className="text-xs font-bold uppercase tracking-wide text-on-surface-variant mb-2">Layovers</div>
+                      <div className="space-y-1 text-xs text-on-surface-variant">
+                        {layovers.map((layover, idx) => (
+                          <div key={`${offer.id}-layover-${idx}`}>
+                            {layover?.name || layover?.id || 'Unknown airport'} ({layover?.id || '—'}) - {layover?.duration || 0} min{layover?.overnight ? ' - Overnight' : ''}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {emissions && (
+                    <div className="rounded-2xl border border-slate-200 dark:border-slate-700 p-3 bg-white/70 dark:bg-slate-900/40">
+                      <div className="text-xs font-bold uppercase tracking-wide text-on-surface-variant mb-2">Carbon Emissions</div>
+                      <div className="text-xs text-on-surface-variant space-y-1">
+                        <div>This flight: {emissions?.this_flight ?? '—'} g</div>
+                        <div>Typical route: {emissions?.typical_for_this_route ?? '—'} g</div>
+                        <div>Difference: {emissions?.difference_percent ?? '—'}%</div>
+                      </div>
+                    </div>
+                  )}
+
+>>>>>>> Stashed changes
                   <button
                     onClick={() => handleBookFlight(offer)}
                     disabled={bookPayLoading}

@@ -43,6 +43,12 @@ const Package = sequelize.define('Package', {
     offer_ends_at: {
         type: DataTypes.DATE
     },
+    duration_value: {
+        type: DataTypes.INTEGER
+    },
+    duration_unit: {
+        type: DataTypes.STRING(20)
+    },
     status: {
         type: DataTypes.ENUM('PENDING', 'APPROVED', 'REJECTED'),
         defaultValue: 'PENDING'
